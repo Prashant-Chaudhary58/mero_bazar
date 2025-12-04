@@ -82,7 +82,7 @@ class RoleSelectionScreen extends StatelessWidget {
               ],
             ),
             Column(
-              //just for testing other pages before authentication
+              //just for testing home page initially
               children: [
                 ElevatedButton(
                   onPressed: () {
