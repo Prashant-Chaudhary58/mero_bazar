@@ -7,7 +7,7 @@ class Home extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body:Center(child: const  Text('This is home page', style: TextStyle(fontSize: 50),)),
+        body:Center(child: const  Text('Welcome to home Screen', style: TextStyle(fontSize: 50),)),
       ),
     );
   }
