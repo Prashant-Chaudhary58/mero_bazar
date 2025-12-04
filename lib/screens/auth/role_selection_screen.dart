@@ -82,7 +82,7 @@ class RoleSelectionScreen extends StatelessWidget {
               ],
             ),
             Column(
-              //just for testing other pages before authentication
+              //just to show the home screen for now. 
               children: [
                 ElevatedButton(
                   onPressed: () {
@@ -97,14 +97,14 @@ class RoleSelectionScreen extends StatelessWidget {
 
             const Text(
               "Join Us",
-              style: TextStyle(fontSize: 18, color: Colors.black),
+              style: TextStyle(fontSize: 20, color: Colors.black),
             ),
 
             const SizedBox(height: 8),
 
             const Text(
               "Shop Green, Live Green.",
-              style: TextStyle(fontSize: 18, color: Colors.black54),
+              style: TextStyle(fontSize: 20, color: Colors.black54),
             ),
 
             const SizedBox(height: 40),
