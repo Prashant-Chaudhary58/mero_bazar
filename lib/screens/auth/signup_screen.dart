@@ -45,7 +45,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 6),
               TextField(
                 decoration: InputDecoration(
-                  hintText: "Enter your full name",
+                  hintText: "Enter your full Name",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -71,7 +71,7 @@ class _SignupScreenState extends State<SignupScreen> {
               TextField(
                 obscureText: _password,
                 decoration: InputDecoration(
-                  hintText: "Enter your password",
+                  hintText: "Enter Your Password",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
