@@ -31,7 +31,7 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
             // Seller & Buyer icons
             Row(
@@ -88,7 +88,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.pushNamed(context, '/home');
                   },
-                  child: Text('Home page'),
+                  child: Text('Continue without signup'),
                 ),
               ],
             ),
