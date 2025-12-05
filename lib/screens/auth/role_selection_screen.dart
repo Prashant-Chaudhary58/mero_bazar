@@ -88,7 +88,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.pushNamed(context, '/home');
                   },
-                  child: Text('Home page'),
+                  child: Text('Continue without signup'),
                 ),
               ],
             ),
