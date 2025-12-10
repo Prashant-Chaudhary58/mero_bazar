@@ -100,7 +100,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _confirmPassword ? Icons.visibility_off : Icons.visibility,
+                      _confirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: () {
                       setState(() {
@@ -137,12 +139,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/home');
+                  },
                   child: const Text(
                     "Register",
                     style: TextStyle(fontSize: 18, color: Colors.white),
@@ -163,7 +162,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: const Text(
                         "Login",
                         style: TextStyle(
-                            color: Colors.green, fontWeight: FontWeight.bold),
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],

@@ -81,18 +81,6 @@ class RoleSelectionScreen extends StatelessWidget {
                 ),
               ],
             ),
-            Column(
-              //just for testing home page initially
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/home');
-                  },
-                  child: Text('Continue without signup'),
-                ),
-              ],
-            ),
-
             const Spacer(),
 
             const Text(
