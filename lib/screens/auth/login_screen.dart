@@ -56,9 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: "Enter your Phone No",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
                 ),
               ),
 
@@ -69,9 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: "Enter your password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword

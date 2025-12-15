@@ -19,5 +19,29 @@ ThemeData getApplicationTheme() {
         )
       )
     ),
+    inputDecorationTheme: InputDecorationThemeData(
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(
+          width: 2,
+          color:Colors.green
+        ),
+
+      ),
+    
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(
+          width: 2,
+          color: const Color.fromARGB(255, 66, 58, 219)
+        )
+    ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(
+          width: 2,
+          color: Colors.blueGrey,
+        ),
+        )),
   );
 }

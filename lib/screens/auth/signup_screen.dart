@@ -46,9 +46,6 @@ class _SignupScreenState extends State<SignupScreen> {
               TextField(
                 decoration: InputDecoration(
                   hintText: "Enter your full Name",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
                 ),
               ),
 
@@ -59,9 +56,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: "Enter your Phone No",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
                 ),
               ),
 
@@ -72,9 +66,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 obscureText: _password,
                 decoration: InputDecoration(
                   hintText: "Enter Your Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _password ? Icons.visibility_off : Icons.visibility,
