@@ -8,25 +8,39 @@ class BottomNavigationWidget extends StatefulWidget {
   const BottomNavigationWidget({super.key});
 
   @override
-  State<BottomNavigationWidget> createState() => _BottomNavigationWidgetState();
+  State<BottomNavigationWidget> createState() =>
+      _BottomNavigationWidgetState();
 }
 
 class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
   int _selectedIndex = 0;
 
-  List<Widget> lstBottomScreen = [
-    const HomeScreen(),
-    const CartScreen(),
-    const FavouriteScreen(),
-    const ProfileScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    CartScreen(),
+    FavouriteScreen(),
+    ProfileScreen(),
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.green,
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+        },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Home",
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_basket),
             label: "Cart",
@@ -35,14 +49,11 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
             icon: Icon(Icons.favorite),
             label: "Favourite",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "profile"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profile",
+          ),
         ],
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
       ),
     );
   }
