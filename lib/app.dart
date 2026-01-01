@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const RoleSelectionScreen(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/dashboard': (context) => const BottomNavigationWidget(),
+        '/bottomnav': (context) => const BottomNavigationWidget(),
       },
     );
   }

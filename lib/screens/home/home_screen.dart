@@ -90,4 +90,28 @@ final List<Map<String, dynamic>> _products = [
     "rating": 4.1,
     "image": "assets/crops/vegetables/Brinjal.png",
   },
+  {
+    "name": "Maize",
+    "price": 20,
+    "rating": 4.0,
+    "image": "assets/crops/cereals/maize.png",
+  },
+  {
+    "name": "Cabbage",
+    "price": 60,
+    "rating": 4.2,
+    "image": "assets/crops/vegetables/cabbage.png",
+  },
+  {
+    "name": "Potato",
+    "price": 45,
+    "rating": 4.0,
+    "image": "assets/crops/vegetables/Potato.jpg",
+  },
+  {
+    "name": "Brinjal",
+    "price": 50,
+    "rating": 3.9,
+    "image": "assets/crops/vegetables/Brinjal.png",
+  },
 ];
