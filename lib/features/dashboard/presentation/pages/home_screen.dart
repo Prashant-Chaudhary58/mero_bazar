@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mero_bazar/screens/widgets/home/category_widget.dart';
-import 'package:mero_bazar/screens/widgets/home/home_banner_widget.dart';
-import 'package:mero_bazar/screens/widgets/home/home_search_widget.dart';
-import 'package:mero_bazar/screens/widgets/home/product_card_widget.dart';
+import '../widgets/category_widget.dart';
+import '../widgets/home_banner_widget.dart';
+import '../widgets/home_search_widget.dart';
+import '../widgets/product_card_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

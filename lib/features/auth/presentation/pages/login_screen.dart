@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+
 import '../view_model/login_view_model.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -8,8 +9,13 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LoginViewModel>();
+    final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
 
+    final vm = context.watch<LoginViewModel>();
+    
+    // Note: Creating controllers inside build is not ideal (they recreate on rebuilds),
+    // but sticking to existing structure for now to minimize changes.
+    // Ideally these should be in a StatefulWidget or the ViewModel.
     final phoneController = TextEditingController();
     final passwordController = TextEditingController();
 
@@ -30,16 +36,15 @@ class LoginScreen extends StatelessWidget {
 
               Center(
                 child: Column(
-                  children: const [
-                    CircleAvatar(
+                  children: [
+                    const CircleAvatar(
                       radius: 50,
-                      backgroundImage:
-                          AssetImage("assets/images/logo.jpg"),
+                      backgroundImage: AssetImage("assets/images/logo.jpg"),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Text(
-                      "Welcome to Login !",
-                      style: TextStyle(
+                      "Welcome to Login (${role.toUpperCase()})!",
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -54,8 +59,7 @@ class LoginScreen extends StatelessWidget {
               TextField(
                 controller: phoneController,
                 keyboardType: TextInputType.phone,
-                decoration:
-                    const InputDecoration(hintText: "Enter your Phone No"),
+                decoration: const InputDecoration(hintText: "Enter your Phone No"),
               ),
 
               const SizedBox(height: 16),
@@ -67,9 +71,7 @@ class LoginScreen extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: "Enter your password",
                   suffixIcon: IconButton(
-                    icon: Icon(vm.obscurePassword
-                        ? Icons.visibility_off
-                        : Icons.visibility),
+                    icon: Icon(vm.obscurePassword ? Icons.visibility_off : Icons.visibility),
                     onPressed: vm.togglePasswordVisibility,
                   ),
                 ),
@@ -79,8 +81,7 @@ class LoginScreen extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {},
-                  child: const Text("Forget Password?",
-                      style: TextStyle(color: Colors.green)),
+                  child: const Text("Forget Password?", style: TextStyle(color: Colors.green)),
                 ),
               ),
 
@@ -96,14 +97,15 @@ class LoginScreen extends StatelessWidget {
                           await vm.login(
                             phoneController.text,
                             passwordController.text,
+                            role,
                           );
-                          Navigator.pushNamed(context, '/bottomnav');
+                          if (context.mounted) {
+                            Navigator.pushNamedAndRemoveUntil(context, '/bottomnav', (route) => false);
+                          }
                         },
                   child: vm.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Login",
-                          style:
-                              TextStyle(fontSize: 18, color: Colors.white)),
+                      : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
 
@@ -114,13 +116,10 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   const Text("Don't have an account? "),
                   GestureDetector(
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/signup'),
+                    onTap: () => Navigator.pushNamed(context, '/signup', arguments: role),
                     child: const Text(
                       "Sign Up",
-                      style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],

@@ -1,16 +1,17 @@
 import '../entities/user_entity.dart';
 import '../repositories/auth_repository.dart';
 
-class LoginUseCase {
+class RegisterUseCase {
   final AuthRepository repository;
 
-  LoginUseCase(this.repository);
+  RegisterUseCase(this.repository);
 
   Future<UserEntity> call({
+    required String fullName,
     required String phone,
     required String password,
     required String role,
   }) {
-    return repository.login(phone: phone, password: password, role: role);
+    return repository.register(fullName: fullName, phone: phone, password: password, role: role);
   }
 }

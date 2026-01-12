@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../view_model/signup_view_model.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
-}
-
-class _SignupScreenState extends State<SignupScreen> {
-  bool _password = true;
-  bool _confirmPassword = true;
-  bool isAccepted = false;
-
-  @override
   Widget build(BuildContext context) {
+    // You might need to provide the ViewModel higher up or here if strict DI isn't setup.
+    // For now, assume it's provided.
+    final vm = context.watch<SignupViewModel>();
+    
+    final fullNameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -30,13 +32,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
               Center(
                 child: Column(
-                  children: [
-                    const CircleAvatar(
+                  children: const [
+                    CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
                       backgroundImage: AssetImage("assets/images/logo.jpg"),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -44,7 +46,8 @@ class _SignupScreenState extends State<SignupScreen> {
               const Text("Full Name", style: TextStyle(fontSize: 16)),
               const SizedBox(height: 6),
               TextField(
-                decoration: InputDecoration(
+                controller: fullNameController,
+                decoration: const InputDecoration(
                   hintText: "Enter your full Name",
                 ),
               ),
@@ -53,8 +56,9 @@ class _SignupScreenState extends State<SignupScreen> {
               const Text("Phone No", style: TextStyle(fontSize: 16)),
               const SizedBox(height: 6),
               TextField(
+                controller: phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: "Enter your Phone No",
                 ),
               ),
@@ -63,18 +67,15 @@ class _SignupScreenState extends State<SignupScreen> {
               const Text("Password", style: TextStyle(fontSize: 16)),
               const SizedBox(height: 6),
               TextField(
-                obscureText: _password,
+                controller: passwordController,
+                obscureText: vm.obscurePassword,
                 decoration: InputDecoration(
                   hintText: "Enter Your Password",
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _password ? Icons.visibility_off : Icons.visibility,
+                      vm.obscurePassword ? Icons.visibility_off : Icons.visibility,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _password = !_password;
-                      });
-                    },
+                    onPressed: vm.togglePasswordVisibility,
                   ),
                 ),
               ),
@@ -83,7 +84,8 @@ class _SignupScreenState extends State<SignupScreen> {
               const Text("Confirm Password", style: TextStyle(fontSize: 16)),
               const SizedBox(height: 6),
               TextField(
-                obscureText: _confirmPassword,
+                controller: confirmPasswordController,
+                obscureText: vm.obscureConfirmPassword,
                 decoration: InputDecoration(
                   hintText: "Enter your confirm password",
                   border: OutlineInputBorder(
@@ -91,15 +93,11 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _confirmPassword
+                      vm.obscureConfirmPassword
                           ? Icons.visibility_off
                           : Icons.visibility,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _confirmPassword = !_confirmPassword;
-                      });
-                    },
+                    onPressed: vm.toggleConfirmPasswordVisibility,
                   ),
                 ),
               ),
@@ -108,13 +106,9 @@ class _SignupScreenState extends State<SignupScreen> {
               Row(
                 children: [
                   Checkbox(
-                    value: isAccepted,
+                    value: vm.isAccepted,
                     activeColor: Colors.green,
-                    onChanged: (value) {
-                      setState(() {
-                        isAccepted = value ?? false;
-                      });
-                    },
+                    onChanged: vm.toggleTermsAcceptance,
                   ),
                   const Expanded(
                     child: Text(
@@ -130,10 +124,21 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/bottomnav');
+                  onPressed: vm.isLoading ? null : () async {
+                     final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
+                     await vm.register(
+                       fullNameController.text, 
+                       phoneController.text, 
+                       passwordController.text,
+                       role,
+                      );
+                     if (context.mounted) {
+                       Navigator.pushNamedAndRemoveUntil(context, '/bottomnav', (route) => false);
+                     }
                   },
-                  child: const Text(
+                  child: vm.isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
                     "Register",
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
@@ -148,7 +153,8 @@ class _SignupScreenState extends State<SignupScreen> {
                     const Text("Already have an account?  "),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/login');
+                         final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
+                        Navigator.pushNamed(context, '/login', arguments: role);
                       },
                       child: const Text(
                         "Login",

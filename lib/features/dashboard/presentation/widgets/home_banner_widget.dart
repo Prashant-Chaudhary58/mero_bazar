@@ -50,6 +50,7 @@ class HomeBannerWidget extends StatelessWidget {
           const SizedBox(width: 8),
 
           // Image section
+          // Ensure this asset path is correct relative to assets folder
           Image.asset(
             'assets/images/flowerhome.png',
             width: 90,
