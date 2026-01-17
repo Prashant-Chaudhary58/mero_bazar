@@ -18,7 +18,7 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login(String phone, String password, String role) async {
+  Future<String?> login(String phone, String password, String role) async {
     isLoading = true;
     notifyListeners();
 
@@ -26,12 +26,18 @@ class LoginViewModel extends ChangeNotifier {
       user = await loginUseCase(phone: phone, password: password, role: role);
       if (user != null) {
         userProvider.setUser(user!);
+        isLoading = false;
+        notifyListeners();
+        return null; // Success
+      } else {
+        isLoading = false;
+        notifyListeners();
+        return "Login failed";
       }
-    } catch(e) {
-      // handle error
+    } catch (e) {
+      isLoading = false;
+      notifyListeners();
+      return e.toString().replaceAll('Exception: ', '');
     }
-
-    isLoading = false;
-    notifyListeners();
   }
 }

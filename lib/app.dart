@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hive/hive.dart';
+import 'package:mero_bazar/features/auth/data/datasources/auth_local_datasource.dart';
+import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:mero_bazar/features/auth/domain/usecases/login_usecase.dart';
 import 'package:mero_bazar/features/auth/domain/usecases/register_usecase.dart';
@@ -16,7 +19,9 @@ import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Box<UserModel> userBox;
+
+  const MyApp({super.key, required this.userBox});
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +31,15 @@ class MyApp extends StatelessWidget {
         // Global State
         ChangeNotifierProvider(create: (_) => UserProvider()),
 
+        // Data Sources
+        Provider<AuthLocalDataSource>(
+          create: (_) => AuthLocalDataSourceImpl(userBox),
+        ),
+
         // Repositories
-        Provider(create: (_) => AuthRepositoryImpl()),
+        ProxyProvider<AuthLocalDataSource, AuthRepositoryImpl>(
+          update: (_, dataSource, __) => AuthRepositoryImpl(dataSource),
+        ),
         
         // UseCases
         ProxyProvider<AuthRepositoryImpl, LoginUseCase>(

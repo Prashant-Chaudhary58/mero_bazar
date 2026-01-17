@@ -1,5 +1,5 @@
 class UserEntity {
-  final String id;
+  final String? id;
   final String phone;
   final String fullName;
   final String role; // 'seller' or 'buyer'
@@ -13,7 +13,7 @@ class UserEntity {
   final String? altPhone;
 
   const UserEntity({
-    this.id = '123',
+    this.id,
     required this.phone,
     required this.fullName,
     required this.role,
@@ -28,6 +28,7 @@ class UserEntity {
   });
 
   UserEntity copyWith({
+    String? id,
     String? fullName,
     String? image,
     String? email,
@@ -39,7 +40,7 @@ class UserEntity {
     String? altPhone,
   }) {
     return UserEntity(
-      id: id,
+      id: id ?? this.id,
       phone: phone,
       fullName: fullName ?? this.fullName,
       role: role,

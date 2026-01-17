@@ -75,7 +75,10 @@ class MyListingsScreen extends StatelessWidget {
                 Navigator.pushNamed(
                   context, 
                   '/product-details', 
-                  arguments: item
+                  arguments: {
+                    ...item,
+                    'isEditable': true,
+                  }
                 );
               },
               child: Container(

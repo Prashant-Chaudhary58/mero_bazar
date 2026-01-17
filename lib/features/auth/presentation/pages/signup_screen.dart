@@ -96,7 +96,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   hintText: "Enter Your Password",
                   suffixIcon: IconButton(
                     icon: Icon(
-                      vm.obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      vm.obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: vm.togglePasswordVisibility,
                   ),
@@ -147,24 +149,51 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: vm.isLoading ? null : () async {
-                     final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
-                     await vm.register(
-                       fullNameController.text, 
-                       phoneController.text, 
-                       passwordController.text,
-                       role,
-                      );
-                     if (context.mounted) {
-                       Navigator.pushNamedAndRemoveUntil(context, '/bottomnav', (route) => false);
-                     }
-                  },
-                  child: vm.isLoading 
+                  onPressed: vm.isLoading
+                      ? null
+                      : () async {
+                          final role =
+                              ModalRoute.of(context)?.settings.arguments
+                                  as String? ??
+                              'buyer';
+                          final error = await vm.register(
+                            fullNameController.text,
+                            phoneController.text,
+                            passwordController.text,
+                            role,
+                          );
+
+                          if (context.mounted) {
+                            if (error == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Registration Successful! Please Login.",
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/login',
+                                arguments: role,
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(error),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: vm.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    "Register",
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                          "Register",
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                 ),
               ),
 
@@ -176,7 +205,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     const Text("Already have an account?  "),
                     GestureDetector(
                       onTap: () {
-                         final role = ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
+                        final role =
+                            ModalRoute.of(context)?.settings.arguments
+                                as String? ??
+                            'buyer';
                         Navigator.pushNamed(context, '/login', arguments: role);
                       },
                       child: const Text(

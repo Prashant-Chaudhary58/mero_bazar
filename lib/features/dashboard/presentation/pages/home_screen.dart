@@ -49,11 +49,25 @@ class HomeScreen extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final product = _products[index];
-                  return ProductCardWidget(
-                    name: product['name'],
-                    image: product['image'],
-                    rating: product['rating'],
-                    price: product['price'],
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context, 
+                        '/product-details', 
+                        arguments: {
+                          'name': product['name'],
+                          'image': product['image'],
+                          'price': "Rs. ${product['price']}/kg", // Formatting price
+                          'isEditable': false,
+                        }
+                      );
+                    },
+                    child: ProductCardWidget(
+                      name: product['name'],
+                      image: product['image'],
+                      rating: product['rating'],
+                      price: product['price'],
+                    ),
                   );
                 },
               ),
