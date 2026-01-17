@@ -6,7 +6,8 @@ import 'app.dart';
 void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(UserModelAdapter());
-  final userBox = await Hive.openBox<UserModel>('users');
+  // final userBox = await Hive.openBox<UserModel>('users'); // Not needed for remote auth immediately, but maybe for caching later.
+  // For now, removing userBox dependency from MyApp to fix build error.
 
-  runApp(MyApp(userBox: userBox));
+  runApp(const MyApp());
 }
