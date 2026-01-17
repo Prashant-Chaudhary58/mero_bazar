@@ -2,19 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../view_model/signup_view_model.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  late final TextEditingController fullNameController;
+  late final TextEditingController phoneController;
+  late final TextEditingController passwordController;
+  late final TextEditingController confirmPasswordController;
+
+  @override
+  void initState() {
+    super.initState();
+    fullNameController = TextEditingController();
+    phoneController = TextEditingController();
+    passwordController = TextEditingController();
+    confirmPasswordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    fullNameController.dispose();
+    phoneController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     // You might need to provide the ViewModel higher up or here if strict DI isn't setup.
     // For now, assume it's provided.
     final vm = context.watch<SignupViewModel>();
-    
-    final fullNameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final passwordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
 
     return Scaffold(
       backgroundColor: Colors.white,

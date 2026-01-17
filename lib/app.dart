@@ -9,7 +9,9 @@ import 'package:mero_bazar/features/auth/presentation/pages/signup_screen.dart';
 import 'package:mero_bazar/features/auth/presentation/view_model/login_view_model.dart';
 import 'package:mero_bazar/features/auth/presentation/view_model/signup_view_model.dart';
 import 'package:mero_bazar/features/dashboard/presentation/pages/dashboard_view.dart';
+import 'package:mero_bazar/features/dashboard/presentation/pages/product_details_screen.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/edit_profile_screen.dart';
+import 'package:mero_bazar/features/profile/presentation/pages/my_listings_screen.dart';
 import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 
@@ -62,6 +64,8 @@ class MyApp extends StatelessWidget {
           '/signup': (context) => const SignupScreen(),
           '/bottomnav': (context) => const DashboardView(),
           '/edit-profile': (context) => const EditProfileScreen(),
+          '/my-listings': (context) => const MyListingsScreen(),
+          '/product-details': (context) => const ProductDetailsScreen(),
         },
       ),
     );
