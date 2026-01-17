@@ -2,12 +2,12 @@ import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_local_datasource.dart';
+import '../datasources/auth_remote_datasource.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthLocalDataSource _localDataSource;
+  final AuthRemoteDataSource _remoteDataSource;
 
-  AuthRepositoryImpl(this._localDataSource);
+  AuthRepositoryImpl(this._remoteDataSource);
 
   @override
   Future<UserEntity> login({
@@ -16,7 +16,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String role,
   }) async {
     try {
-      return await _localDataSource.loginUser(phone, password);
+      return await _remoteDataSource.loginUser(phone, password);
     } catch (e) {
       rethrow;
     }
@@ -35,10 +35,12 @@ class AuthRepositoryImpl implements AuthRepository {
         fullName: fullName,
         role: role,
         password: password,
-        image: role == 'seller' ? "assets/images/farmer.png" : "assets/images/buyer.png",
+        image: role == 'seller'
+            ? "assets/images/farmer.png"
+            : "assets/images/buyer.png",
       );
-      await _localDataSource.registerUser(user);
-      return user;
+      await _remoteDataSource.registerUser(user, password);
+      return user; // API doesn't return user on register usually, but we need meaningful return
     } catch (e) {
       rethrow;
     }

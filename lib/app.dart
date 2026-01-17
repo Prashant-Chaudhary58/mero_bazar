@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:hive/hive.dart';
-import 'package:mero_bazar/features/auth/data/datasources/auth_local_datasource.dart';
+import 'package:dio/dio.dart';
+import 'package:mero_bazar/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:mero_bazar/features/auth/domain/usecases/login_usecase.dart';
@@ -19,28 +19,28 @@ import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 
 class MyApp extends StatelessWidget {
-  final Box<UserModel> userBox;
-
-  const MyApp({super.key, required this.userBox});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     return MultiProvider(
       providers: [
         // Global State
         ChangeNotifierProvider(create: (_) => UserProvider()),
 
+        // External
+        Provider<Dio>(create: (_) => Dio()),
+
         // Data Sources
-        Provider<AuthLocalDataSource>(
-          create: (_) => AuthLocalDataSourceImpl(userBox),
+        Provider<AuthRemoteDataSource>(
+          create: (context) => AuthRemoteDataSourceImpl(context.read<Dio>()),
         ),
 
         // Repositories
-        ProxyProvider<AuthLocalDataSource, AuthRepositoryImpl>(
+        ProxyProvider<AuthRemoteDataSource, AuthRepositoryImpl>(
           update: (_, dataSource, __) => AuthRepositoryImpl(dataSource),
         ),
-        
+
         // UseCases
         ProxyProvider<AuthRepositoryImpl, LoginUseCase>(
           update: (_, repo, __) => LoginUseCase(repo),
@@ -50,19 +50,29 @@ class MyApp extends StatelessWidget {
         ),
 
         // ViewModels
-        ChangeNotifierProxyProvider2<LoginUseCase, UserProvider, LoginViewModel>(
+        ChangeNotifierProxyProvider2<
+          LoginUseCase,
+          UserProvider,
+          LoginViewModel
+        >(
           create: (context) => LoginViewModel(
             context.read<LoginUseCase>(),
             context.read<UserProvider>(),
           ),
-          update: (_, useCase, userProvider, __) => LoginViewModel(useCase, userProvider),
+          update: (_, useCase, userProvider, __) =>
+              LoginViewModel(useCase, userProvider),
         ),
-        ChangeNotifierProxyProvider2<RegisterUseCase, UserProvider, SignupViewModel>(
+        ChangeNotifierProxyProvider2<
+          RegisterUseCase,
+          UserProvider,
+          SignupViewModel
+        >(
           create: (context) => SignupViewModel(
             context.read<RegisterUseCase>(),
             context.read<UserProvider>(),
           ),
-          update: (_, useCase, userProvider, __) => SignupViewModel(useCase, userProvider),
+          update: (_, useCase, userProvider, __) =>
+              SignupViewModel(useCase, userProvider),
         ),
       ],
       child: MaterialApp(
