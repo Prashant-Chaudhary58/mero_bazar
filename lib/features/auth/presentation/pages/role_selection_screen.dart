@@ -39,7 +39,7 @@ class RoleSelectionScreen extends StatelessWidget {
               children: [
                 InkWell(
                   onTap: () {
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, '/login', arguments: 'seller');
                   },
                   child: Column(
                     children: [
@@ -60,7 +60,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: () {
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, '/login', arguments: 'buyer');
                   },
                   child: Column(
                     children: [

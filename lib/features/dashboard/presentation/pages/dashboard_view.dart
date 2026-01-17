@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:mero_bazar/screens/bottom_screen/cart_screen.dart';
-import 'package:mero_bazar/screens/bottom_screen/favourite_screen.dart';
-import 'package:mero_bazar/screens/bottom_screen/profile_screen.dart';
-import 'package:mero_bazar/screens/home/home_screen.dart';
+import 'package:mero_bazar/features/profile/presentation/pages/profile_screen.dart';
+import 'cart_screen.dart';
+import 'favourite_screen.dart';
+import 'home_screen.dart';
 
-class BottomNavigationWidget extends StatefulWidget {
-  const BottomNavigationWidget({super.key});
+class DashboardView extends StatefulWidget {
+  const DashboardView({super.key});
 
   @override
-  State<BottomNavigationWidget> createState() =>
-      _BottomNavigationWidgetState();
+  State<DashboardView> createState() => _DashboardViewState();
 }
 
-class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
+class _DashboardViewState extends State<DashboardView> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = const [

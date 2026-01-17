@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mero_bazar/screens/widgets/home/category_widget.dart';
-import 'package:mero_bazar/screens/widgets/home/home_banner_widget.dart';
-import 'package:mero_bazar/screens/widgets/home/home_search_widget.dart';
-import 'package:mero_bazar/screens/widgets/home/product_card_widget.dart';
+import '../widgets/category_widget.dart';
+import '../widgets/home_banner_widget.dart';
+import '../widgets/home_search_widget.dart';
+import '../widgets/product_card_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -49,11 +49,25 @@ class HomeScreen extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final product = _products[index];
-                  return ProductCardWidget(
-                    name: product['name'],
-                    image: product['image'],
-                    rating: product['rating'],
-                    price: product['price'],
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context, 
+                        '/product-details', 
+                        arguments: {
+                          'name': product['name'],
+                          'image': product['image'],
+                          'price': "Rs. ${product['price']}/kg", // Formatting price
+                          'isEditable': false,
+                        }
+                      );
+                    },
+                    child: ProductCardWidget(
+                      name: product['name'],
+                      image: product['image'],
+                      rating: product['rating'],
+                      price: product['price'],
+                    ),
                   );
                 },
               ),
@@ -88,6 +102,30 @@ final List<Map<String, dynamic>> _products = [
     "name": "Brinjal",
     "price": 60,
     "rating": 4.1,
+    "image": "assets/crops/vegetables/Brinjal.png",
+  },
+  {
+    "name": "Maize",
+    "price": 20,
+    "rating": 4.0,
+    "image": "assets/crops/cereals/maize.png",
+  },
+  {
+    "name": "Cabbage",
+    "price": 60,
+    "rating": 4.2,
+    "image": "assets/crops/vegetables/cabbage.png",
+  },
+  {
+    "name": "Potato",
+    "price": 45,
+    "rating": 4.0,
+    "image": "assets/crops/vegetables/Potato.jpg",
+  },
+  {
+    "name": "Brinjal",
+    "price": 50,
+    "rating": 3.9,
     "image": "assets/crops/vegetables/Brinjal.png",
   },
 ];
