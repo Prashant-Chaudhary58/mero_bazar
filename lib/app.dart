@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:mero_bazar/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:mero_bazar/features/auth/domain/usecases/login_usecase.dart';
 import 'package:mero_bazar/features/auth/domain/usecases/register_usecase.dart';
