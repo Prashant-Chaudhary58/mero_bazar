@@ -16,6 +16,8 @@ import 'package:mero_bazar/features/dashboard/presentation/pages/dashboard_view.
 import 'package:mero_bazar/features/dashboard/presentation/pages/product_details_screen.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/my_listings_screen.dart';
+import 'package:mero_bazar/features/dashboard/data/datasources/product_remote_datasource.dart';
+import 'package:mero_bazar/features/dashboard/data/repositories/product_repository_impl.dart';
 import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 
@@ -40,10 +42,16 @@ class MyApp extends StatelessWidget {
         Provider<AuthRemoteDataSource>(
           create: (context) => AuthRemoteDataSourceImpl(context.read<Dio>()),
         ),
+        Provider<ProductRemoteDataSource>(
+          create: (context) => ProductRemoteDataSourceImpl(context.read<Dio>()),
+        ),
 
         // Repositories
         ProxyProvider<AuthRemoteDataSource, AuthRepositoryImpl>(
           update: (_, dataSource, __) => AuthRepositoryImpl(dataSource),
+        ),
+        ProxyProvider<ProductRemoteDataSource, ProductRepositoryImpl>(
+          update: (_, dataSource, __) => ProductRepositoryImpl(dataSource),
         ),
 
         // UseCases

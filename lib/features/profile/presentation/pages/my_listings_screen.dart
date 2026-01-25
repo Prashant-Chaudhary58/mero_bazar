@@ -135,6 +135,17 @@ class MyListingsScreen extends StatelessWidget {
           },
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(
+            context,
+            '/product-details',
+            arguments: {'isEditable': true, 'isNew': true},
+          );
+        },
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }
