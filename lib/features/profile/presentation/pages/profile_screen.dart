@@ -61,8 +61,34 @@ class ProfileScreen extends StatelessWidget {
                               if (user?.image != null) {
                                 if (user!.image!.startsWith('assets')) {
                                   image = AssetImage(user.image!);
-                                } else {
+                                } else if (user.image == 'no-photo.jpg') {
+                                  image = const AssetImage(
+                                    "assets/images/logo.jpg",
+                                  );
+                                } else if (user.image!.startsWith('/data') ||
+                                    user.image!.startsWith('/storage')) {
+                                  // Local absolute path (from older upload session on same device)
                                   image = FileImage(File(user.image!));
+                                } else {
+                                  // Likely a server filename (e.g. "image-123.jpg")
+                                  // We need to construct the full URL.
+                                  // Assuming API is at /api/v1 so images are at root /uploads/
+                                  // We need a base URL constant. ApiService has it but it's private/static.
+                                  // Let's hardcode for now based on Api_Service or make it dynamic if possible.
+                                  // Base: http://172.18.118.197:5001/
+                                  // Image path: public/uploads/<role>/<filename>
+                                  // Wait, we don't know the role subfolder easily without user role.
+                                  // Actually we do have user.role.
+
+                                  String roleFolder = 'others';
+                                  if (user.role == 'seller')
+                                    roleFolder = 'farmer';
+                                  if (user.role == 'buyer')
+                                    roleFolder = 'buyer';
+
+                                  final imageUrl =
+                                      "http://172.18.118.197:5001/uploads/$roleFolder/${user.image!}";
+                                  image = NetworkImage(imageUrl);
                                 }
                               } else {
                                 image = const AssetImage(

@@ -48,7 +48,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _cityController = TextEditingController(text: user?.city);
     _addressController = TextEditingController(text: user?.address);
     _altPhoneController = TextEditingController(text: user?.altPhone);
-    _selectedProvince = user?.province;
+
+    // Ensure selected province matches one of the options
+    if (user?.province != null && _provinces.contains(user!.province)) {
+      _selectedProvince = user!.province;
+    } else {
+      _selectedProvince = null;
+    }
+
     _imagePath = user?.image;
   }
 
@@ -114,10 +121,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    // On some devices, denied might still allow asking again, but for now strict check:
     if (!status.isGranted && !status.isLimited) {
-      // If denied but not permanently, we can try requesting again or show msg
-      // But request() already asks. If it returns denied, user likely said no.
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Permission required to access media")),
@@ -224,6 +228,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final currentUser = userProvider.user;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -262,9 +269,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         color: Colors.grey.shade300,
                         image: _imagePath != null
                             ? DecorationImage(
-                                image: _imagePath!.startsWith('assets')
-                                    ? AssetImage(_imagePath!) as ImageProvider
-                                    : FileImage(File(_imagePath!)),
+                                image:
+                                    (_imagePath!.startsWith('assets')
+                                            ? AssetImage(_imagePath!)
+                                            : (_imagePath == 'no-photo.jpg'
+                                                  ? const AssetImage(
+                                                      "assets/images/logo.jpg",
+                                                    )
+                                                  : (_imagePath!.startsWith(
+                                                          '/data',
+                                                        ) ||
+                                                        _imagePath!.startsWith(
+                                                          '/storage',
+                                                        ))
+                                                  ? FileImage(File(_imagePath!))
+                                                  : NetworkImage(
+                                                      "http://172.18.118.197:5001/uploads/${currentUser?.role == 'seller' ? 'farmer' : 'buyer'}/${_imagePath!}",
+                                                    )))
+                                        as ImageProvider,
                                 fit: BoxFit.cover,
                               )
                             : null,

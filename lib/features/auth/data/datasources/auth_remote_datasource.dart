@@ -27,7 +27,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     if (response.statusCode == 200) {
       final user = UserModel.fromJson(response.data['data']);
-      final token = response.data['token']; 
+      final token = response.data['token'];
 
       if (token != null) {
         await AuthService.saveSession(token, user);
@@ -68,6 +68,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> updateProfile(UserEntity user, File? imageFile) async {
     final Map<String, dynamic> fields = {
+      'role': user.role, // Essential for backend folder logic
       'fullName': user.fullName,
       'email': user.email ?? '',
       'dob': user.dob ?? '',
@@ -92,25 +93,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
     }
 
-    // Assuming endpoint is /users/update-profile/:id or similar
-    // Using /users/update/${user.id} as a safe bet for now
-    final response = await dio.put('/users/update/${user.id}', data: formData);
+    // Debugging URL
+    final url = '/auth/update/${user.id}';
+    print("Sending Update Request to: $url with ID: ${user.id}");
+
+    final response = await dio.put(url, data: formData);
 
     if (response.statusCode == 200) {
       final updatedUser = UserModel.fromJson(response.data['data']);
 
-      // Update local session
-      // We need the token. Stored token should be valid.
-      // We don't have token here easily unless we read it or pass it.
-      // But we can just save the user part of the session if we could.
-      // AuthService.saveSession requires token.
-      // Ideally we read the existing token first.
-
-      // For now, let's assume UI updates the provider.
-      // But for persistence across restarts, we should update session in secure storage.
-      // Let's try to get token from existing session.
-      // Wait, tryAutoLogin returns UserModel, no token exposed there.
-      // We might need to fetch token from SecureStorage directly.
       final token = await SecureStorage.getToken();
       if (token != null) {
         await AuthService.saveSession(token, updatedUser);
