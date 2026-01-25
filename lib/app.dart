@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
+import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 import 'package:mero_bazar/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:mero_bazar/features/auth/domain/usecases/login_usecase.dart';
@@ -18,17 +20,21 @@ import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final UserModel? initialUser;
+
+  const MyApp({super.key, this.initialUser});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // Global State
-        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider(initialUser: initialUser),
+        ),
 
         // External
-        Provider<Dio>(create: (_) => Dio()),
+        Provider<Dio>.value(value: ApiService.dio),
 
         // Data Sources
         Provider<AuthRemoteDataSource>(
@@ -78,7 +84,7 @@ class MyApp extends StatelessWidget {
         title: "Mero Baazar",
         debugShowCheckedModeBanner: false,
         theme: getApplicationTheme(),
-        initialRoute: '/',
+        initialRoute: initialUser != null ? '/bottomnav' : '/',
         routes: {
           '/': (context) => const RoleSelectionScreen(),
           '/login': (context) => const LoginScreen(),

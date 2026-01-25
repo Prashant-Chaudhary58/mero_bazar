@@ -218,7 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      // Maybe reset or just do nothing (design only says "Edit" but function unclear, keeping generic)
+
                     },
                     style: OutlinedButton.styleFrom(
                        foregroundColor: Colors.green,
