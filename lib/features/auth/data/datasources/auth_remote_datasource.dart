@@ -12,7 +12,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   // Use 10.0.2.2 for Android Emulator to access localhost of the host machine.
   // Use http://localhost:5000 for iOS Simulator or Web.
-  static const String baseUrl = 'http://10.59.167.197:5000/api/v1';
+  // static const String baseUrl = 'http://10.59.167.197:5000/api/v1';
+  static const String baseUrl = 'http://172.18.118.197:5001/api/v1';
 
   AuthRemoteDataSourceImpl(this.dio);
 

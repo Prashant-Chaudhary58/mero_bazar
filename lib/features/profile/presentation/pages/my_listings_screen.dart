@@ -105,7 +105,7 @@ class MyListingsScreen extends StatelessWidget {
                           width: double.infinity,
                           color: Colors.grey.shade200,
                           child: Image.asset(
-                            item["name"] == "Cabbage" ? "assets/images/cabbage.png" : // Trying to match potential assets or fallback
+                            item["name"] == "Cabbage" ? "assets/images/cabbage.png" : 
                             "assets/images/logo.jpg", 
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
@@ -153,18 +153,6 @@ class MyListingsScreen extends StatelessWidget {
             );
           },
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        currentIndex: 3, // Assuming profile is the last tab or this is just a standalone screen
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: ''),
-           BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-        ],
       ),
     );
   }
