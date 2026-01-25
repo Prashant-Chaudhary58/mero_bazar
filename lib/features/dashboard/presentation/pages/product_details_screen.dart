@@ -203,19 +203,35 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: _selectedImage != null
                       ? Image.file(_selectedImage!, fit: BoxFit.cover)
                       : (_assetImage != null
-                            ? Image.asset(
-                                _assetImage!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Center(
-                                    child: Icon(
-                                      Icons.image,
-                                      size: 80,
-                                      color: Colors.grey,
-                                    ),
-                                  );
-                                },
-                              )
+                            ? (_assetImage!.startsWith('assets')
+                                  ? Image.asset(
+                                      _assetImage!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return const Center(
+                                              child: Icon(
+                                                Icons.image,
+                                                size: 80,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          },
+                                    )
+                                  : Image.network(
+                                      "http://172.18.118.197:5001/uploads/products/$_assetImage",
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return const Center(
+                                              child: Icon(
+                                                Icons.broken_image,
+                                                size: 80,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          },
+                                    ))
                             : const Center(
                                 child: Icon(
                                   Icons.add_a_photo,

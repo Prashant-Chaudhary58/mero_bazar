@@ -12,12 +12,12 @@ class ApiService {
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Set base URL (you can change this anytime)
+    // Set base URL 
     dio.options.baseUrl = 'http://172.18.118.197:5001/api/v1';
     dio.options.connectTimeout = const Duration(seconds: 15);
     dio.options.receiveTimeout = const Duration(seconds: 15);
 
-    // Setup persistent cookies (this is the magic!)
+    // Setup persistent cookies 
     final dir = await getApplicationDocumentsDirectory();
     final cookieJar = PersistCookieJar(
       ignoreExpires: true,

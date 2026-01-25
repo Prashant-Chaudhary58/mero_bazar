@@ -17,7 +17,6 @@ class AuthService {
       // Recreate user from stored data
       return UserModel.fromJson(userData);
     } catch (e) {
-      // If anything goes wrong, clear corrupted session
       await SecureStorage.clearSession();
       return null;
     }
