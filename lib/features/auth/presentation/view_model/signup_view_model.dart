@@ -49,8 +49,7 @@ class SignupViewModel extends ChangeNotifier {
       if (user != null) {
         userProvider.setUser(
           user!,
-        ); // Optional: Auto-login after signup? User requirement says navigate to login.
-        // But for consistency with plan: "Success -> Login Screen"
+        ); 
         isLoading = false;
         notifyListeners();
         return null; // Success

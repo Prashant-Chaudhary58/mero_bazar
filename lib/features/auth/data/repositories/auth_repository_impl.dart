@@ -41,7 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
             : "assets/images/buyer.png",
       );
       await _remoteDataSource.registerUser(user, password);
-      return user; // API doesn't return user on register usually, but we need meaningful return
+      return user; 
     } catch (e) {
       rethrow;
     }
