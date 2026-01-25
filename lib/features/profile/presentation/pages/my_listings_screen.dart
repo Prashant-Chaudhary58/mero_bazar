@@ -6,38 +6,9 @@ class MyListingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Mock Data based on the user's image
-    final List<Map<String, String>> listings = [
-      {
-        "name": "Cabbage",
-        "price": "Rs. 80/kg",
-        "image": "assets/images/cabbage.jpg" 
-      },
-      {
-        "name": "Mango",
-        "price": "Rs. 120/kg",
-        "image": "assets/images/mango.jpg"
-      },
-      {
-        "name": "Brinjal",
-        "price": "Rs. 40/kg",
-        "image": "assets/images/brinjal.jpg"
-      },
-      {
-        "name": "Maize",
-        "price": "Rs. 10/piece",
-        "image": "assets/images/maize.jpg"
-      },
-       {
-        "name": "Apple",
-        "price": "Rs. 200/kg",
-        "image": "assets/images/apple.jpg"
-      },
-       {
-        "name": "Orange",
-        "price": "Rs. 150/kg",
-        "image": "assets/images/orange.jpg"
-      },
-    ];
+    // Mock Data based on the user's image
+    // TODO: Fetch real listings from API
+    final List<Map<String, String>> listings = [];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -73,12 +44,9 @@ class MyListingsScreen extends StatelessWidget {
             return InkWell(
               onTap: () {
                 Navigator.pushNamed(
-                  context, 
-                  '/product-details', 
-                  arguments: {
-                    ...item,
-                    'isEditable': true,
-                  }
+                  context,
+                  '/product-details',
+                  arguments: {...item, 'isEditable': true},
                 );
               },
               child: Container(
@@ -99,23 +67,32 @@ class MyListingsScreen extends StatelessWidget {
                     // Image Section
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                         // Using a container with placeholder color if image fails or for existing assets
                         child: Container(
                           width: double.infinity,
                           color: Colors.grey.shade200,
                           child: Image.asset(
-                            item["name"] == "Cabbage" ? "assets/images/cabbage.png" : 
-                            "assets/images/logo.jpg", 
+                            item["name"] == "Cabbage"
+                                ? "assets/images/cabbage.png"
+                                : "assets/images/logo.jpg",
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                               return const Center(child: Icon(Icons.image, size: 40, color: Colors.grey));
+                              return const Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                              );
                             },
                           ),
                         ),
                       ),
                     ),
-                    
+
                     // Details Section
                     Padding(
                       padding: const EdgeInsets.all(12.0),
@@ -132,7 +109,11 @@ class MyListingsScreen extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const Icon(Icons.favorite_border, size: 20, color: Colors.green),
+                              const Icon(
+                                Icons.favorite_border,
+                                size: 20,
+                                color: Colors.green,
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),

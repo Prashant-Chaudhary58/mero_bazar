@@ -2,7 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -20,7 +23,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _cityController;
   late TextEditingController _addressController;
   late TextEditingController _altPhoneController;
-  
+
   String? _selectedProvince;
   String? _imagePath;
 
@@ -31,7 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     "Gandaki",
     "Lumbini",
     "Karnali",
-    "Sudurpashchim"
+    "Sudurpashchim",
   ];
 
   @override
@@ -62,8 +65,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
+    // Show dialog to choose Camera or Gallery
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _pickImageSource(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _pickImageSource(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImageSource(ImageSource source) async {
+    PermissionStatus status;
+
+    if (source == ImageSource.camera) {
+      status = await Permission.camera.request();
+    } else {
+      // For Android 13+ use photos, else storage
+      if (Platform.isAndroid && (await _getAndroidSdk()) >= 33) {
+        status = await Permission.photos.request();
+      } else {
+        status = await Permission.storage.request();
+      }
+    }
+
+    if (status.isPermanentlyDenied) {
+      if (mounted) _showPermissionSettingsDialog();
+      return;
+    }
+
+    // On some devices, denied might still allow asking again, but for now strict check:
+    if (!status.isGranted && !status.isLimited) {
+      // If denied but not permanently, we can try requesting again or show msg
+      // But request() already asks. If it returns denied, user likely said no.
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Permission required to access media")),
+        );
+      return;
+    }
+
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
       setState(() {
@@ -72,7 +135,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  void _saveProfile() {
+  Future<int> _getAndroidSdk() async {
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      return androidInfo.version.sdkInt;
+    }
+    return 0;
+  }
+
+  void _showPermissionSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Permission Required"),
+        content: const Text(
+          "Please enable permissions in settings to upload photos.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              openAppSettings();
+            },
+            child: const Text("Settings"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveProfile() async {
     final userProvider = context.read<UserProvider>();
     final currentUser = userProvider.user;
 
@@ -89,8 +185,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         image: _imagePath,
       );
 
-      userProvider.updateUser(updatedUser);
-      Navigator.pop(context);
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      try {
+        final authRepo = context.read<AuthRepositoryImpl>();
+        File? imageFile;
+        if (_imagePath != null && !_imagePath!.startsWith('assets')) {
+          imageFile = File(_imagePath!);
+        }
+
+        final resultUser = await authRepo.updateProfile(
+          user: updatedUser,
+          imageFile: imageFile,
+        );
+
+        if (!mounted) return;
+        Navigator.pop(context); // Pop loading
+
+        userProvider.updateUser(resultUser);
+        Navigator.pop(context); // Pop screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile updated successfully")),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context); // Pop loading
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to update profile: $e")));
+      }
     }
   }
 
@@ -134,19 +262,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         color: Colors.grey.shade300,
                         image: _imagePath != null
                             ? DecorationImage(
-                                image: _imagePath!.startsWith('assets') 
-                                  ? AssetImage(_imagePath!) as ImageProvider
-                                  : FileImage(File(_imagePath!)),
+                                image: _imagePath!.startsWith('assets')
+                                    ? AssetImage(_imagePath!) as ImageProvider
+                                    : FileImage(File(_imagePath!)),
                                 fit: BoxFit.cover,
                               )
                             : null,
                       ),
                       child: _imagePath == null
-                          ? const Icon(Icons.person, size: 50, color: Colors.white)
+                          ? const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.white,
+                            )
                           : null,
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -154,7 +289,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
                             blurRadius: 4,
-                          )
+                          ),
                         ],
                       ),
                       child: const Text("Edit", style: TextStyle(fontSize: 12)),
@@ -172,11 +307,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 16),
             _buildTextField("Date of Birth", _dobController),
             const SizedBox(height: 16),
-            
+
             // Province Dropdown
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFEEEBEB), 
+                color: const Color(0xFFEEEBEB),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey.shade400),
               ),
@@ -184,7 +319,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedProvince,
-                  hint: const Text("Province", style: TextStyle(color: Colors.grey)),
+                  hint: const Text(
+                    "Province",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   isExpanded: true,
                   items: _provinces.map((String value) {
                     return DropdownMenuItem<String>(
@@ -200,7 +338,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
             _buildTextField("District", _districtController),
             const SizedBox(height: 16),
@@ -208,8 +346,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 16),
             _buildTextField("Home Address", _addressController),
             const SizedBox(height: 16),
-            _buildTextField("Alternative Phone Number (Optional)", _altPhoneController),
-            
+            _buildTextField(
+              "Alternative Phone Number (Optional)",
+              _altPhoneController,
+            ),
+
             const SizedBox(height: 30),
 
             // Buttons
@@ -217,16 +358,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-
-                    },
+                    onPressed: () {},
                     style: OutlinedButton.styleFrom(
-                       foregroundColor: Colors.green,
-                       side: const BorderSide(color: Colors.green),
-                       padding: const EdgeInsets.symmetric(vertical: 14),
-                       shape: RoundedRectangleBorder(
-                         borderRadius: BorderRadius.circular(8),
-                       )
+                      foregroundColor: Colors.green,
+                      side: const BorderSide(color: Colors.green),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text("Edit"),
                   ),
@@ -236,15 +375,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: ElevatedButton(
                     onPressed: _saveProfile,
                     style: ElevatedButton.styleFrom(
-                       backgroundColor: const Color(0xFF4A7C2E), // Dark Green
-                       padding: const EdgeInsets.symmetric(vertical: 14),
-                       shape: RoundedRectangleBorder(
-                         borderRadius: BorderRadius.circular(8),
-                       )
+                      backgroundColor: const Color(0xFF4A7C2E), // Dark Green
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text(
-                      "Save", 
-                      style: TextStyle(color: Colors.white)
+                      "Save",
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -265,7 +404,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
         fillColor: const Color(0xFFEEEBEB),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade400),
