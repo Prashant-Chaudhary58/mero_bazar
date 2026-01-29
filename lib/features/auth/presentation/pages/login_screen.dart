@@ -13,9 +13,7 @@ class LoginScreen extends StatelessWidget {
 
     final vm = context.watch<LoginViewModel>();
 
-    // Note: Creating controllers inside build is not ideal (they recreate on rebuilds),
-    // but sticking to existing structure for now to minimize changes.
-    // Ideally these should be in a StatefulWidget or the ViewModel.
+
     final phoneController = TextEditingController();
     final passwordController = TextEditingController();
 
