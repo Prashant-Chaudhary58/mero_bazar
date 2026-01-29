@@ -1,4 +1,5 @@
 import 'package:mero_bazar/features/auth/data/models/user_model.dart';
+import 'dart:io';
 
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -40,7 +41,19 @@ class AuthRepositoryImpl implements AuthRepository {
             : "assets/images/buyer.png",
       );
       await _remoteDataSource.registerUser(user, password);
-      return user; // API doesn't return user on register usually, but we need meaningful return
+      return user; 
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<UserEntity> updateProfile({
+    required UserEntity user,
+    File? imageFile,
+  }) async {
+    try {
+      return await _remoteDataSource.updateProfile(user, imageFile);
     } catch (e) {
       rethrow;
     }

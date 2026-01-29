@@ -4,10 +4,12 @@ import '../../features/auth/domain/entities/user_entity.dart';
 class UserProvider extends ChangeNotifier {
   UserEntity? _user;
 
+  UserProvider({UserEntity? initialUser}) : _user = initialUser;
+
   UserEntity? get user => _user;
 
   bool get isLoggedIn => _user != null;
-  
+
   bool get isSeller => _user?.role == 'seller';
 
   void setUser(UserEntity user) {
@@ -17,6 +19,11 @@ class UserProvider extends ChangeNotifier {
 
   void updateUser(UserEntity updatedUser) {
     _user = updatedUser;
+    notifyListeners();
+  }
+
+  void clearUser() {
+    _user = null;
     notifyListeners();
   }
 }

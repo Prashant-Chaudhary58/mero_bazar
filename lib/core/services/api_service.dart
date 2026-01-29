@@ -1,29 +1,42 @@
+// lib/core/api/api_service.dart
+import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:mero_bazar/core/utils/storage.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:path_provider/path_provider.dart';
 
+class ApiService {
+  static final Dio dio = Dio();
+  static bool _isInitialized = false;
 
-final dio = Dio(BaseOptions(
-  baseUrl: 'http://172.18.118.197:5001/api/v1', // change to your actual URL
-  connectTimeout: const Duration(seconds: 15),
-  receiveTimeout: const Duration(seconds: 15),
-)); // BaseOptions // Dio
+  static Future<void> initialize() async {
+    if (_isInitialized) return;
 
-void setupInterceptors() {
-  dio.interceptors.add(InterceptorsWrapper(
-    onRequest: (options, handler) async {
-      final token = await SecureStorage.getToken();
-      if (token != null) {
-        options.headers['Authorization'] = 'Bearer $token';
-      }
-      handler.next(options);
-    },
-    onError: (error, handler) async {
-      // Optional: If token is invalid/expired (401), logout automatically
-      if (error.response?.statusCode == 401) {
-        await SecureStorage.deleteToken();
-        // You can add navigation to login screen here if needed
-      }
-      handler.next(error);
-    },
-  ));
+    // Set base URL 
+    dio.options.baseUrl = 'http://172.18.118.197:5001/api/v1';
+    dio.options.connectTimeout = const Duration(seconds: 15);
+    dio.options.receiveTimeout = const Duration(seconds: 15);
+
+    // Setup persistent cookies 
+    final dir = await getApplicationDocumentsDirectory();
+    final cookieJar = PersistCookieJar(
+      ignoreExpires: true,
+      storage: FileStorage("${dir.path}/.cookies/"),
+    );
+
+    dio.interceptors.add(CookieManager(cookieJar));
+
+    // auto logout on 401
+    dio.interceptors.add(
+      InterceptorsWrapper(onError: (error, handler) {
+        if (error.response?.statusCode == 401) {
+          // Future: trigger logout globally
+          print("Session expired - should logout");
+        }
+        handler.next(error);
+      }),
+    );
+
+    _isInitialized = true;
+  }
 }
