@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeSearchWidget extends StatelessWidget {
   const HomeSearchWidget({super.key});
@@ -12,20 +15,21 @@ class HomeSearchWidget extends StatelessWidget {
         Consumer<UserProvider>(
           builder: (context, userProvider, _) {
             final user = userProvider.user;
-            
-            ImageProvider? image;
-            if (user?.image != null) {
-              if (user!.image!.startsWith('assets')) {
-                image = AssetImage(user.image!);
-              } 
-              // Handle file path logic if needed in future
-            }
 
-            return CircleAvatar(
-              radius: 20, 
-              backgroundColor: Colors.grey,
-              backgroundImage: image,
-              child: image == null ? const Icon(Icons.person, color: Colors.white) : null,
+            return GestureDetector(
+              onTap: () {
+                context.read<DashboardProvider>().setSelectedIndex(
+                  3,
+                ); 
+              },
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: _getUserImage(user),
+                child: (user?.image == null)
+                    ? const Icon(Icons.person, color: Colors.white)
+                    : null,
+              ),
             );
           },
         ),
@@ -45,9 +49,18 @@ class HomeSearchWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const Icon(Icons.notifications,
-            color: Colors.green, size: 28),
+        const Icon(Icons.notifications, color: Colors.green, size: 28),
       ],
+    );
+  }
+
+  ImageProvider? _getUserImage(dynamic user) {
+    if (user?.image == null) return null;
+    if (user.image.startsWith('assets')) {
+      return AssetImage(user.image);
+    }
+    return CachedNetworkImageProvider(
+      ApiService.getImageUrl(user.image, user.role ?? 'buyer'),
     );
   }
 }

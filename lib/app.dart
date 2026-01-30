@@ -20,6 +20,7 @@ import 'package:mero_bazar/features/dashboard/data/datasources/product_remote_da
 import 'package:mero_bazar/features/dashboard/data/repositories/product_repository_impl.dart';
 import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 
 class MyApp extends StatelessWidget {
   final UserModel? initialUser;
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => UserProvider(initialUser: initialUser),
         ),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
 
         // External
         Provider<Dio>.value(value: ApiService.dio),
