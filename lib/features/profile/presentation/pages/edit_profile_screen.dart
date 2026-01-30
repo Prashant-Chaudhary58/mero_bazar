@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
@@ -269,24 +271,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         color: Colors.grey.shade300,
                         image: _imagePath != null
                             ? DecorationImage(
-                                image:
-                                    (_imagePath!.startsWith('assets')
-                                            ? AssetImage(_imagePath!)
-                                            : (_imagePath == 'no-photo.jpg'
-                                                  ? const AssetImage(
-                                                      "assets/images/logo.jpg",
-                                                    )
-                                                  : (_imagePath!.startsWith(
-                                                          '/data',
-                                                        ) ||
-                                                        _imagePath!.startsWith(
-                                                          '/storage',
-                                                        ))
-                                                  ? FileImage(File(_imagePath!))
-                                                  : NetworkImage(
-                                                      "http://172.18.118.197:5001/uploads/${currentUser?.role == 'seller' ? 'farmer' : 'buyer'}/${_imagePath!}",
-                                                    )))
-                                        as ImageProvider,
+                                image: (_imagePath!.startsWith('assets')
+                                    ? AssetImage(_imagePath!)
+                                    : (_imagePath == 'no-photo.jpg'
+                                        ? const AssetImage("assets/images/logo.jpg")
+                                        : (_imagePath!.startsWith('/data') || _imagePath!.startsWith('/storage'))
+                                            ? FileImage(File(_imagePath!))
+                                            : CachedNetworkImageProvider(
+                                                ApiService.getImageUrl(
+                                                  _imagePath!,
+                                                  currentUser?.role ?? 'buyer',
+                                                ),
+                                              ))) as ImageProvider,
                                 fit: BoxFit.cover,
                               )
                             : null,

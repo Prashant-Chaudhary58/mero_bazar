@@ -3,24 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/core/services/auth_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Access UserProvider globally for the widget
+
     final userProvider = Provider.of<UserProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light background
+      backgroundColor: const Color(0xFFF5F5F5), 
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
           onPressed: () {
-            // In dashboard tab, this might not do anything or switch tab.
           },
         ),
         centerTitle: true,
@@ -56,51 +57,64 @@ class ProfileScreen extends StatelessWidget {
                           Builder(
                             builder: (context) {
                               final user = userProvider.user;
-                              // Image Logic
-                              ImageProvider? image;
-                              if (user?.image != null) {
-                                if (user!.image!.startsWith('assets')) {
-                                  image = AssetImage(user.image!);
-                                } else if (user.image == 'no-photo.jpg') {
-                                  image = const AssetImage(
+
+                              if (user?.image == null ||
+                                  user?.image == 'no-photo.jpg') {
+                                return const CircleAvatar(
+                                  radius: 35,
+                                  backgroundImage: AssetImage(
                                     "assets/images/logo.jpg",
-                                  );
-                                } else if (user.image!.startsWith('/data') ||
-                                    user.image!.startsWith('/storage')) {
-                                  // Local absolute path (from older upload session on same device)
-                                  image = FileImage(File(user.image!));
-                                } else {
-                                  // Likely a server filename (e.g. "image-123.jpg")
-                                  // We need to construct the full URL.
-                                  // Assuming API is at /api/v1 so images are at root /uploads/
-                                  // We need a base URL constant. ApiService has it but it's private/static.
-                                  // Let's hardcode for now based on Api_Service or make it dynamic if possible.
-                                  // Base: http://172.18.118.197:5001/
-                                  // Image path: public/uploads/<role>/<filename>
-                                  // Wait, we don't know the role subfolder easily without user role.
-                                  // Actually we do have user.role.
-
-                                  String roleFolder = 'others';
-                                  if (user.role == 'seller')
-                                    roleFolder = 'farmer';
-                                  if (user.role == 'buyer')
-                                    roleFolder = 'buyer';
-
-                                  final imageUrl =
-                                      "http://172.18.118.197:5001/uploads/$roleFolder/${user.image!}";
-                                  image = NetworkImage(imageUrl);
-                                }
-                              } else {
-                                image = const AssetImage(
-                                  "assets/images/logo.jpg",
-                                ); // Fallback
+                                  ),
+                                  backgroundColor: Colors.transparent,
+                                );
                               }
 
-                              return CircleAvatar(
-                                radius: 35,
-                                backgroundImage: image,
-                                backgroundColor: Colors.grey.shade200,
-                                child: null,
+                              if (user!.image!.startsWith('assets')) {
+                                return CircleAvatar(
+                                  radius: 35,
+                                  backgroundImage: AssetImage(user.image!),
+                                  backgroundColor: Colors.transparent,
+                                );
+                              }
+
+                              if (user.image!.startsWith('/data') ||
+                                  user.image!.startsWith('/storage')) {
+                                return CircleAvatar(
+                                  radius: 35,
+                                  backgroundImage: FileImage(File(user.image!)),
+                                  backgroundColor: Colors.transparent,
+                                );
+                              }
+
+                              // Server Image
+                              final imageUrl = ApiService.getImageUrl(
+                                user.image,
+                                user.role ?? 'buyer',
+                              );
+
+                              return CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                imageBuilder: (context, imageProvider) =>
+                                    CircleAvatar(
+                                      radius: 35,
+                                      backgroundImage: imageProvider,
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                placeholder: (context, url) => CircleAvatar(
+                                  radius: 35,
+                                  backgroundColor: Colors.grey.shade200,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    const CircleAvatar(
+                                      radius: 35,
+                                      backgroundImage: AssetImage(
+                                        "assets/images/logo.jpg",
+                                      ),
+                                      backgroundColor: Colors.transparent,
+                                    ),
                               );
                             },
                           ),

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/features/dashboard/data/repositories/product_repository_impl.dart';
 import 'package:mero_bazar/features/dashboard/domain/entities/product_entity.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
@@ -30,12 +31,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       if (currentUser == null) return;
 
       final allProducts = await repo.getAllProducts();
-      // Filter products by current seller ID
-      // Assuming product.seller matches user.id (which is _id from backend)
-      // Note: Backend might populate seller as an object or send ID string.
-      // ProductModel logic: seller: json['seller'] is Map ? json['seller']['_id'] : json['seller']
-      // So product.seller should be the ID string.
-
       final myProducts = allProducts
           .where((p) => p.seller == currentUser.id)
           .toList();
@@ -91,7 +86,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 0.75, // Adjust based on card height
+                  childAspectRatio: 0.75,
                 ),
                 itemBuilder: (context, index) {
                   final item = _myProducts[index];
@@ -105,9 +100,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           'price': "Rs. ${item.price}",
                           'description': item.description,
                           'quantity': item.quantity,
-                          'image': item.image, // Pass server filename
+                          'image': item.image,
                           'isEditable': true,
-                          // Pass other details if needed
                         },
                       );
                     },
@@ -126,7 +120,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Image Section
                           Expanded(
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(
@@ -138,21 +131,26 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                 child:
                                     (item.image != null &&
                                         item.image != 'no-photo.jpg')
-                                    ? Image.network(
-                                        // Use the standard product image path or role-based check?
-                                        // Images uploaded via 'add product' go to /uploads/products/
-                                        "http://172.18.118.197:5001/uploads/products/${item.image}",
+                                    ? CachedNetworkImage(
+                                        imageUrl: ApiService.getImageUrl(
+                                          item.image,
+                                          'products',
+                                        ),
                                         fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return const Center(
-                                                child: Icon(
-                                                  Icons.broken_image,
-                                                  size: 40,
-                                                  color: Colors.grey,
-                                                ),
-                                              );
-                                            },
+                                        placeholder: (context, url) =>
+                                            const Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) =>
+                                            const Center(
+                                              child: Icon(
+                                                Icons.broken_image,
+                                                size: 40,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
                                       )
                                     : Image.asset(
                                         "assets/images/logo.jpg",
@@ -161,8 +159,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               ),
                             ),
                           ),
-
-                          // Details Section
                           Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Column(
@@ -211,7 +207,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Re-fetch after coming back from add product
           Navigator.pushNamed(
             context,
             '/product-details',
