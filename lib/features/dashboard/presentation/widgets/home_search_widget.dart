@@ -20,16 +20,9 @@ class HomeSearchWidget extends StatelessWidget {
               onTap: () {
                 context.read<DashboardProvider>().setSelectedIndex(
                   3,
-                ); 
+                ); // Profile tab
               },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: _getUserImage(user),
-                child: (user?.image == null)
-                    ? const Icon(Icons.person, color: Colors.white)
-                    : null,
-              ),
+              child: _buildProfileAvatar(user),
             );
           },
         ),
@@ -54,13 +47,45 @@ class HomeSearchWidget extends StatelessWidget {
     );
   }
 
-  ImageProvider? _getUserImage(dynamic user) {
-    if (user?.image == null) return null;
-    if (user.image.startsWith('assets')) {
-      return AssetImage(user.image);
+  Widget _buildProfileAvatar(dynamic user) {
+    const double radius = 20;
+
+    if (user?.image == null || user?.image == 'no-photo.jpg') {
+      return const CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey,
+        child: Icon(Icons.person, color: Colors.white),
+      );
     }
-    return CachedNetworkImageProvider(
-      ApiService.getImageUrl(user.image, user.role ?? 'buyer'),
+
+    if (user!.image!.startsWith('assets')) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: AssetImage(user.image!),
+        backgroundColor: Colors.transparent,
+      );
+    }
+
+    // Server Image with robust caching
+    final imageUrl = ApiService.getImageUrl(user.image, user.role ?? 'buyer');
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      imageBuilder: (context, imageProvider) => CircleAvatar(
+        radius: radius,
+        backgroundImage: imageProvider,
+        backgroundColor: Colors.transparent,
+      ),
+      placeholder: (context, url) => CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey.shade200,
+        child: const CircularProgressIndicator(strokeWidth: 2),
+      ),
+      errorWidget: (context, url, error) => const CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey,
+        child: Icon(Icons.person, color: Colors.white),
+      ),
     );
   }
 }
