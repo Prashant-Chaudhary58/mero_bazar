@@ -72,7 +72,7 @@ void main() {
 
       await tester.enterText(
         find.widgetWithText(TextField, 'Enter your full Name'),
-        'John Doe',
+        'Prashant Chaudhary',
       );
       await tester.enterText(
         find.widgetWithText(TextField, 'Enter your Phone No'),

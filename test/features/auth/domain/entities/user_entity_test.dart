@@ -6,7 +6,7 @@ void main() {
     const user = UserEntity(
       id: '1',
       phone: '9800000000',
-      fullName: 'John Doe',
+      fullName: 'Prashant Chaudhary',
       role: 'buyer',
       email: 'john@example.com',
     );
@@ -19,8 +19,8 @@ void main() {
 
       expect(updatedUser.fullName, 'John Smith');
       expect(updatedUser.city, 'Kathmandu');
-      expect(updatedUser.phone, '9800000000'); 
-      expect(updatedUser.id, '1'); 
+      expect(updatedUser.phone, '9800000000');
+      expect(updatedUser.id, '1');
       expect(updatedUser.email, 'john@example.com');
     });
 

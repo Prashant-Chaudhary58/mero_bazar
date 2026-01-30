@@ -28,7 +28,7 @@ void main() {
     const user = UserEntity(
       id: '1',
       phone: '9800000000',
-      fullName: 'John Doe',
+      fullName: 'Prashant Chaudhary',
       role: 'buyer',
     );
 
@@ -50,7 +50,10 @@ void main() {
       await tester.pumpWidget(createEditProfileScreen());
 
       expect(find.text('My Account'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'John Doe'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Prashant Chaudhary'),
+        findsOneWidget,
+      );
       expect(find.text('Save'), findsOneWidget);
     });
 
@@ -76,7 +79,7 @@ void main() {
       await tester.pumpWidget(createEditProfileScreen());
 
       // Change name
-      final nameField = find.widgetWithText(TextField, 'John Doe');
+      final nameField = find.widgetWithText(TextField, 'Prashant Chaudhary');
       await tester.enterText(nameField, 'John Smith');
 
       final saveButton = find.text('Save');

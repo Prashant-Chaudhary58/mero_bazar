@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeSearchWidget extends StatelessWidget {
   const HomeSearchWidget({super.key});
@@ -12,20 +15,14 @@ class HomeSearchWidget extends StatelessWidget {
         Consumer<UserProvider>(
           builder: (context, userProvider, _) {
             final user = userProvider.user;
-            
-            ImageProvider? image;
-            if (user?.image != null) {
-              if (user!.image!.startsWith('assets')) {
-                image = AssetImage(user.image!);
-              } 
-              // Handle file path logic if needed in future
-            }
 
-            return CircleAvatar(
-              radius: 20, 
-              backgroundColor: Colors.grey,
-              backgroundImage: image,
-              child: image == null ? const Icon(Icons.person, color: Colors.white) : null,
+            return GestureDetector(
+              onTap: () {
+                context.read<DashboardProvider>().setSelectedIndex(
+                  3,
+                ); // Profile tab
+              },
+              child: _buildProfileAvatar(user),
             );
           },
         ),
@@ -45,9 +42,50 @@ class HomeSearchWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const Icon(Icons.notifications,
-            color: Colors.green, size: 28),
+        const Icon(Icons.notifications, color: Colors.green, size: 28),
       ],
+    );
+  }
+
+  Widget _buildProfileAvatar(dynamic user) {
+    const double radius = 20;
+
+    if (user?.image == null || user?.image == 'no-photo.jpg') {
+      return const CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey,
+        child: Icon(Icons.person, color: Colors.white),
+      );
+    }
+
+    if (user!.image!.startsWith('assets')) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: AssetImage(user.image!),
+        backgroundColor: Colors.transparent,
+      );
+    }
+
+    // Server Image with robust caching
+    final imageUrl = ApiService.getImageUrl(user.image, user.role ?? 'buyer');
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      imageBuilder: (context, imageProvider) => CircleAvatar(
+        radius: radius,
+        backgroundImage: imageProvider,
+        backgroundColor: Colors.transparent,
+      ),
+      placeholder: (context, url) => CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey.shade200,
+        child: const CircularProgressIndicator(strokeWidth: 2),
+      ),
+      errorWidget: (context, url, error) => const CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey,
+        child: Icon(Icons.person, color: Colors.white),
+      ),
     );
   }
 }

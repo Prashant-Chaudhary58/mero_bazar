@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/profile_screen.dart';
 import 'cart_screen.dart';
 import 'favourite_screen.dart';
@@ -14,7 +16,6 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
-  int _selectedIndex = 0;
   DateTime? _lastPressedAt;
 
   final List<Widget> _screens = const [
@@ -72,10 +73,9 @@ class _DashboardViewState extends State<DashboardView> {
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
 
-        if (_selectedIndex != 0) {
-          setState(() {
-            _selectedIndex = 0;
-          });
+        final dashboardProvider = context.read<DashboardProvider>();
+        if (dashboardProvider.selectedIndex != 0) {
+          dashboardProvider.setSelectedIndex(0);
           return;
         }
 
@@ -83,13 +83,16 @@ class _DashboardViewState extends State<DashboardView> {
         await _handleBackPress();
       },
       child: Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: _screens),
+        body: IndexedStack(
+          index: context.watch<DashboardProvider>().selectedIndex,
+          children: _screens,
+        ),
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
-          currentIndex: _selectedIndex,
+          currentIndex: context.watch<DashboardProvider>().selectedIndex,
           selectedItemColor: Colors.green,
           onTap: (index) {
-            setState(() => _selectedIndex = index);
+            context.read<DashboardProvider>().setSelectedIndex(index);
           },
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
