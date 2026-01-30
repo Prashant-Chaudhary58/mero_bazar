@@ -8,7 +8,7 @@ void main() {
     const user = UserEntity(
       id: '1',
       phone: '9800000000',
-      fullName: 'John Doe',
+      fullName: 'Prashant Chaudhary',
       role: 'buyer',
     );
 

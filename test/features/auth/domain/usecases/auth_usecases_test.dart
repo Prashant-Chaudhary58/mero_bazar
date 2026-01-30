@@ -21,7 +21,7 @@ void main() {
   const user = UserEntity(
     id: '1',
     phone: '9800000000',
-    fullName: 'John Doe',
+    fullName: 'Prashant Chaudhary',
     role: 'buyer',
   );
 
@@ -54,7 +54,7 @@ void main() {
     test('RegisterUseCase should call repository.register', () async {
       when(
         () => mockAuthRepository.register(
-          fullName: 'John Doe',
+          fullName: 'Prashant Chaudhary',
           phone: '9800000000',
           password: 'password',
           role: 'buyer',
@@ -62,7 +62,7 @@ void main() {
       ).thenAnswer((_) async => user);
 
       final result = await registerUseCase(
-        fullName: 'John Doe',
+        fullName: 'Prashant Chaudhary',
         phone: '9800000000',
         password: 'password',
         role: 'buyer',
@@ -71,7 +71,7 @@ void main() {
       expect(result, user);
       verify(
         () => mockAuthRepository.register(
-          fullName: 'John Doe',
+          fullName: 'Prashant Chaudhary',
           phone: '9800000000',
           password: 'password',
           role: 'buyer',
