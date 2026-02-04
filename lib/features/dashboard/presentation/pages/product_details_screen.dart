@@ -7,6 +7,7 @@ import 'package:mero_bazar/features/dashboard/domain/entities/product_entity.dar
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
+import 'package:mero_bazar/features/dashboard/domain/entities/review_entity.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key});
@@ -30,6 +31,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   double? _sellerLng;
   String? _sellerPhone;
   final ImagePicker _picker = ImagePicker();
+
+  // Ratings
+  List<ReviewEntity> _reviews = [];
+  double _averageRating = 0.0;
+  int _numOfReviews = 0;
+  bool _isLoadingReviews = false;
+  String? _productId;
 
   @override
   void didChangeDependencies() {
@@ -137,6 +145,105 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Seller phone number not available")),
       );
+    }
+  }
+
+  Future<void> _fetchReviews() async {
+    if (_productId == null) return;
+    setState(() => _isLoadingReviews = true);
+
+    try {
+      final repo = context.read<ProductRepositoryImpl>();
+      final reviews = await repo.getReviews(_productId!);
+      setState(() {
+        _reviews = reviews;
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      print("Error fetching reviews: $e");
+      setState(() => _isLoadingReviews = false);
+    }
+  }
+
+  Future<void> _showAddReviewDialog() async {
+    final TextEditingController reviewController = TextEditingController();
+    int selectedRating = 5;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Rate Product"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedRating = index + 1;
+                          });
+                        },
+                        icon: Icon(
+                          index < selectedRating
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: Colors.amber,
+                          size: 32,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: reviewController,
+                    decoration: const InputDecoration(
+                      hintText: "Write a review...",
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (reviewController.text.isEmpty) return;
+                    Navigator.pop(context);
+                    await _addReview(selectedRating, reviewController.text);
+                  },
+                  child: const Text("Submit"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _addReview(int rating, String text) async {
+    if (_productId == null) return;
+
+    try {
+      final repo = context.read<ProductRepositoryImpl>();
+      await repo.addReview(_productId!, rating, text);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Review submitted!")));
+      _fetchReviews();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to submit review: $e")));
     }
   }
 
@@ -466,18 +573,74 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                     if (!_isEditable)
                       Row(
-                        children: const [
-                          Icon(Icons.star, color: Colors.amber, size: 24),
-                          SizedBox(width: 8),
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 24),
+                          const SizedBox(width: 8),
                           Text(
-                            "0.0", // TODO: Fetch real rating
-                            style: TextStyle(
+                            "$_averageRating ($_numOfReviews reviews)",
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _showAddReviewDialog,
+                            icon: const Icon(Icons.edit),
+                            label: const Text("Write a Review"),
+                          ),
                         ],
                       ),
+                    const SizedBox(height: 16),
+                    if (!_isEditable) ...[
+                      if (_isLoadingReviews)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_reviews.isNotEmpty) ...[
+                        const Text(
+                          "Reviews",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _reviews.length > 3 ? 3 : _reviews.length,
+                          itemBuilder: (context, index) {
+                            final review = _reviews[index];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: CircleAvatar(
+                                child: Text(review.userName?[0] ?? "U"),
+                              ),
+                              title: Text(review.userName ?? "Anonymous"),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: List.generate(5, (starIndex) {
+                                      return Icon(
+                                        starIndex < review.rating
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        size: 14,
+                                        color: Colors.amber,
+                                      );
+                                    }),
+                                  ),
+                                  Text(review.text),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 16),
 
                     if (!_isEditable)

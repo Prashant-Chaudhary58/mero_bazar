@@ -1,5 +1,6 @@
 import 'dart:io';
 import '../../domain/entities/product_entity.dart';
+import '../../domain/entities/review_entity.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../datasources/product_remote_datasource.dart';
 
@@ -32,5 +33,19 @@ class ProductRepositoryImpl implements ProductRepository {
     File? imageFile,
   ) async {
     return await remoteDataSource.createProduct(product, imageFile);
+  }
+
+  @override
+  Future<List<ReviewEntity>> getReviews(String productId) async {
+    return await remoteDataSource.getReviews(productId);
+  }
+
+  @override
+  Future<ReviewEntity> addReview(
+    String productId,
+    int rating,
+    String text,
+  ) async {
+    return await remoteDataSource.addReview(productId, rating, text);
   }
 }

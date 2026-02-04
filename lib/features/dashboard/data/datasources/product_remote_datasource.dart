@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../domain/entities/product_entity.dart';
 import '../models/product_model.dart';
+import '../models/review_model.dart';
 import 'dart:io';
 
 abstract class ProductRemoteDataSource {
@@ -11,6 +12,8 @@ abstract class ProductRemoteDataSource {
   });
   Future<ProductModel> getProduct(String id);
   Future<ProductModel> createProduct(ProductEntity product, File? imageFile);
+  Future<List<ReviewModel>> getReviews(String productId);
+  Future<ReviewModel> addReview(String productId, int rating, String text);
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -81,5 +84,33 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       return ProductModel.fromJson(response.data['data']);
     }
     throw Exception(response.data['error'] ?? 'Failed to create product');
+  }
+
+  @override
+  Future<List<ReviewModel>> getReviews(String productId) async {
+    final response = await dio.get('/products/$productId/reviews');
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['data'];
+      return data.map((e) => ReviewModel.fromJson(e)).toList();
+    }
+    throw Exception('Failed to load reviews');
+  }
+
+  @override
+  Future<ReviewModel> addReview(
+    String productId,
+    int rating,
+    String text,
+  ) async {
+    final response = await dio.post(
+      '/products/$productId/reviews',
+      data: {'rating': rating, 'text': text},
+    );
+
+    if (response.statusCode == 201) {
+      return ReviewModel.fromJson(response.data['data']);
+    }
+    throw Exception(response.data['error'] ?? 'Failed to add review');
   }
 }

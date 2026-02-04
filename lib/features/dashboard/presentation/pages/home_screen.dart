@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:mero_bazar/core/services/api_service.dart';
+
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../widgets/home_search_widget.dart';

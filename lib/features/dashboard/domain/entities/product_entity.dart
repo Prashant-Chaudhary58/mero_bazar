@@ -11,6 +11,8 @@ class ProductEntity {
   final double? sellerLat;
   final double? sellerLng;
   final String? sellerPhone;
+  final num averageRating;
+  final int numOfReviews;
 
   ProductEntity({
     this.id,
@@ -24,5 +26,7 @@ class ProductEntity {
     this.sellerLat,
     this.sellerLng,
     this.sellerPhone,
+    this.averageRating = 0.0,
+    this.numOfReviews = 0,
   });
 }
