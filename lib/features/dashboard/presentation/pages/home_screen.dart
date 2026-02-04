@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
@@ -26,11 +27,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final productProvider = context.read<ProductProvider>();
     double? lat;
     double? lng;
+    double? userLat;
+    double? userLng;
 
     try {
       final position = await LocationService.getCurrentPosition();
       lat = position.latitude;
+      lat = position.latitude;
       lng = position.longitude;
+
+      if (mounted) {
+        setState(() {
+          _userLat = lat;
+          _userLng = lng;
+        });
+      }
+      userLat = lat;
+      userLng = lng;
       // You might want to store this location in UserProvider or similar for global access
     } catch (e) {
       // Handle permission error or service disabled
@@ -129,8 +142,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     product.image ?? '',
                                     'products',
                                   ),
-                            rating: 0.0, // Rating not in entity yet
+                            rating: 0.0,
                             price: product.price.toInt(),
+                            distance:
+                                (_userLat != null &&
+                                    _userLng != null &&
+                                    product.sellerLat != null &&
+                                    product.sellerLng != null)
+                                ? "${(Geolocator.distanceBetween(_userLat!, _userLng!, product.sellerLat!, product.sellerLng!) / 1000).toStringAsFixed(1)} km"
+                                : null,
                           ),
                         );
                       },
