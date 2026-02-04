@@ -44,7 +44,9 @@ class ProductCardWidget extends StatelessWidget {
                         fit: BoxFit.cover,
                       )
                     : CachedNetworkImage(
-                        imageUrl: ApiService.getImageUrl(image, 'products'),
+                        imageUrl: image.startsWith('http')
+                            ? image
+                            : ApiService.getImageUrl(image, 'products'),
                         height: 120,
                         width: double.infinity,
                         fit: BoxFit.cover,

@@ -197,15 +197,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
 
     if (result != null && result is LatLng) {
+      if (!mounted) return;
       setState(() {
         _lat = result.latitude;
         _lng = result.longitude;
         _isLoadingLocation = true;
       });
-      await _reverseGeocode(_lat!, _lng!);
-      setState(() {
-        _isLoadingLocation = false;
-      });
+
+      try {
+        // Add timeout to prevent hanging indefinitely
+        await _reverseGeocode(_lat!, _lng!).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            print("Geocoding timed out");
+            return;
+          },
+        );
+      } catch (e) {
+        print("Error in manual pick: $e");
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+        });
+      }
     }
   }
 

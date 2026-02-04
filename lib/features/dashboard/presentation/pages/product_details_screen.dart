@@ -54,22 +54,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       _quantityController = TextEditingController();
     } else {
       _titleController = TextEditingController(
-        text: args?['name'] ?? "ताजा नेपाली आम 🥭",
+        text: args?['name'] ?? "No Name",
       );
       _priceController = TextEditingController(
-        text: args?['price'] ?? "Rs. 120/kg",
+        text: args?['price'] != null ? "Rs. ${args!['price']}/kg" : "Rs. 0/kg",
       );
-
-      const String defaultDescription =
-          "प्रजाति: मालदह, दशहरी, कलकत्ते, बम्बै, सिन्धु, अल्फान्सो\n"
-          "विशेषता: बारीबाट सिधै, पूर्ण पाकेको, रसिलो-मीठो, सुगन्धित, 200-600 ग्राम, कम रासायनिक, जैविक स्वाद\n"
-          "गर्मीयामको राजा – एक टोकाइमै स्वर्ग!";
 
       _descriptionController = TextEditingController(
-        text: args?['description'] ?? defaultDescription,
+        text: args?['description'] ?? "No description available.",
       );
       _quantityController = TextEditingController(
-        text: args?['quantity']?.toString() ?? "500 kg",
+        text: args?['quantity']?.toString() ?? "Out of Stock",
       );
     }
   }
@@ -475,7 +470,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Icon(Icons.star, color: Colors.amber, size: 24),
                           SizedBox(width: 8),
                           Text(
-                            "4.5",
+                            "0.0", // TODO: Fetch real rating
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

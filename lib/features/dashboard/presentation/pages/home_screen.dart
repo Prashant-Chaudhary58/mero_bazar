@@ -126,9 +126,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               '/product-details',
                               arguments: {
+                                'product':
+                                    product, // Pass the entire object if possible, or individual fields
+                                'id': product.id,
                                 'name': product.name,
+                                'description': product.description,
+                                'category': product.category,
+                                'quantity': product.quantity,
                                 'image': product.image,
-                                'price': "Rs. ${product.price}/kg",
+                                'price': product.price.toString(),
                                 'isEditable': false,
                                 'sellerId': product.seller,
                                 'sellerLat': product.sellerLat,
@@ -139,14 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                           child: ProductCardWidget(
                             name: product.name,
-                            image:
-                                (product.image != null &&
-                                    product.image!.startsWith('http'))
-                                ? product.image!
-                                : ApiService.getImageUrl(
-                                    product.image ?? '',
-                                    'products',
-                                  ),
+                            image: product.image ?? '',
                             rating: 0.0,
                             price: product.price.toInt(),
                             distance:
