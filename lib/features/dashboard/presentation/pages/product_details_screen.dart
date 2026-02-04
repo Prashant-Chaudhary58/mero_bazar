@@ -6,6 +6,7 @@ import 'package:mero_bazar/features/dashboard/data/repositories/product_reposito
 import 'package:mero_bazar/features/dashboard/domain/entities/product_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
+import 'package:mero_bazar/core/services/location_service.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key});
@@ -25,6 +26,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isNew = false;
   File? _selectedImage;
   String? _assetImage;
+  double? _sellerLat;
+  double? _sellerLng;
+  String? _sellerPhone;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -38,6 +42,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _isEditable = args?['isEditable'] ?? false;
     _isNew = args?['isNew'] ?? false;
     _assetImage = args?['image'] ?? "assets/images/logo.jpg";
+    _sellerLat = args?['sellerLat'];
+    _sellerLng = args?['sellerLng'];
+    _sellerPhone = args?['sellerPhone'];
 
     // Initialize controllers with passed data or defaults
     if (_isNew) {
@@ -116,6 +123,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _visitFarm() async {
+    if (_sellerLat != null && _sellerLng != null) {
+      await LocationService.launchMaps(_sellerLat!, _sellerLng!);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Seller location not available")),
+      );
+    }
+  }
+
+  Future<void> _contactSeller() async {
+    if (_sellerPhone != null && _sellerPhone!.isNotEmpty) {
+      await LocationService.launchDialer(_sellerPhone!);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Seller phone number not available")),
+      );
+    }
   }
 
   Future<void> _saveChanges() async {
@@ -490,7 +517,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {},
+                              onPressed: _visitFarm,
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(color: Colors.green),
                                 padding: const EdgeInsets.symmetric(
@@ -513,7 +540,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: _contactSeller,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A7C20),
                                 padding: const EdgeInsets.symmetric(

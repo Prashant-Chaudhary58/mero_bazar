@@ -20,38 +20,59 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<UserModel> loginUser(String phone, String password) async {
-    final response = await dio.post(
-      '/auth/login',
-      data: {'phone': phone, 'password': password},
-    );
+    try {
+      print('Login Debug: Phone: $phone');
+      final response = await dio.post(
+        '/auth/login',
+        data: {'phone': phone, 'password': password},
+      );
 
-    if (response.statusCode == 200) {
-      final user = UserModel.fromJson(response.data['data']);
-      final token = response.data['token'];
+      if (response.statusCode == 200) {
+        final user = UserModel.fromJson(response.data['data']);
+        final token = response.data['token'];
 
-      if (token != null) {
-        await AuthService.saveSession(token, user);
+        if (token != null) {
+          await AuthService.saveSession(token, user);
+        }
+
+        return user;
       }
-
-      return user;
+      throw Exception(response.data['error'] ?? 'Login failed');
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final error = e.response?.data['error'];
+        if (error != null) {
+          throw Exception(error);
+        }
+      }
+      throw Exception(e.message ?? 'Login failed');
     }
-    throw Exception(response.data['error'] ?? 'Login failed');
   }
 
   @override
   Future<void> registerUser(UserEntity user, String password) async {
-    final response = await dio.post(
-      '/auth/register',
-      data: {
-        'fullName': user.fullName,
-        'phone': user.phone,
-        'password': password,
-        'role': user.role,
-      },
-    );
+    try {
+      final response = await dio.post(
+        '/auth/register',
+        data: {
+          'fullName': user.fullName,
+          'phone': user.phone,
+          'password': password,
+          'role': user.role,
+        },
+      );
 
-    if (response.statusCode != 201) {
-      throw Exception(response.data['error'] ?? 'Registration failed');
+      if (response.statusCode != 201) {
+        throw Exception(response.data['error'] ?? 'Registration failed');
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final error = e.response?.data['error'];
+        if (error != null) {
+          throw Exception(error);
+        }
+      }
+      throw Exception(e.message ?? 'Registration failed');
     }
   }
 
@@ -77,6 +98,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'city': user.city ?? '',
       'address': user.address ?? '',
       'altPhone': user.altPhone ?? '',
+      'lat': user.lat,
+      'lng': user.lng,
     };
 
     FormData formData = FormData.fromMap(fields);
@@ -94,21 +117,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
 
     // Debugging URL
-    final url = '/auth/update/${user.id}';
+    // Debugging URL
+    final url = '/auth/${user.id}';
     print("Sending Update Request to: $url with ID: ${user.id}");
 
-    final response = await dio.put(url, data: formData);
+    try {
+      final response = await dio.put(url, data: formData);
 
-    if (response.statusCode == 200) {
-      final updatedUser = UserModel.fromJson(response.data['data']);
+      if (response.statusCode == 200) {
+        final updatedUser = UserModel.fromJson(response.data['data']);
 
-      final token = await SecureStorage.getToken();
-      if (token != null) {
-        await AuthService.saveSession(token, updatedUser);
+        final token = await SecureStorage.getToken();
+        if (token != null) {
+          await AuthService.saveSession(token, updatedUser);
+        }
+
+        return updatedUser;
       }
-
-      return updatedUser;
+      throw Exception(response.data['error'] ?? 'Update failed');
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final error = e.response?.data['error'];
+        if (error != null) {
+          throw Exception(error);
+        }
+      }
+      throw Exception(e.message ?? 'Update failed');
     }
-    throw Exception(response.data['error'] ?? 'Update failed');
   }
 }

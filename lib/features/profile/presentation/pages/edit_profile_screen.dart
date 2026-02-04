@@ -8,6 +8,7 @@ import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.
 import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:mero_bazar/core/services/location_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -20,14 +21,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Controllers
   late TextEditingController _fullNameController;
   late TextEditingController _emailController;
-  late TextEditingController _dobController;
   late TextEditingController _districtController;
   late TextEditingController _cityController;
   late TextEditingController _addressController;
+  late TextEditingController _phoneController;
   late TextEditingController _altPhoneController;
 
   String? _selectedProvince;
   String? _imagePath;
+  File? _pickedImageFile;
+  double? _lat;
+  double? _lng;
+  bool _isLoadingLocation = false;
 
   final List<String> _provinces = [
     "Koshi",
@@ -45,11 +50,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = context.read<UserProvider>().user;
     _fullNameController = TextEditingController(text: user?.fullName);
     _emailController = TextEditingController(text: user?.email);
-    _dobController = TextEditingController(text: user?.dob);
     _districtController = TextEditingController(text: user?.district);
     _cityController = TextEditingController(text: user?.city);
     _addressController = TextEditingController(text: user?.address);
     _altPhoneController = TextEditingController(text: user?.altPhone);
+    _phoneController = TextEditingController(text: user?.phone);
 
     // Ensure selected province matches one of the options
     if (user?.province != null && _provinces.contains(user!.province)) {
@@ -58,6 +63,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _selectedProvince = null;
     }
 
+    _lat = user?.lat;
+    _lng = user?.lng;
     _imagePath = user?.image;
   }
 
@@ -65,11 +72,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
-    _dobController.dispose();
     _districtController.dispose();
     _cityController.dispose();
     _addressController.dispose();
     _altPhoneController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -136,6 +143,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (image != null) {
       setState(() {
+        _pickedImageFile = File(image.path);
         _imagePath = image.path;
       });
     }
@@ -149,14 +157,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return 0;
   }
 
+  Future<void> _getLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      final position = await LocationService.getCurrentPosition();
+      setState(() {
+        _lat = position.latitude;
+        _lng = position.longitude;
+      });
+
+      final placemark = await LocationService.getAddressFromCoordinates(
+        _lat!,
+        _lng!,
+      );
+      if (placemark != null) {
+        setState(() {
+          // Auto-fill address fields
+          if (_provinces.contains(placemark.administrativeArea)) {
+            _selectedProvince = placemark.administrativeArea;
+          }
+          _districtController.text = placemark.subAdministrativeArea ?? '';
+          _cityController.text = placemark.locality ?? '';
+          _addressController.text =
+              "${placemark.street ?? ''} ${placemark.name ?? ''}".trim();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Location fetched and address updated!"),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error fetching location: $e")));
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
   void _showPermissionSettingsDialog() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Permission Required"),
-        content: const Text(
-          "Please enable permissions in settings to upload photos.",
-        ),
+        content: const Text("Please enable permissions in settings."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -182,13 +232,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final updatedUser = currentUser.copyWith(
         fullName: _fullNameController.text,
         email: _emailController.text,
-        dob: _dobController.text,
+        dob: '',
         province: _selectedProvince,
         district: _districtController.text,
         city: _cityController.text,
         address: _addressController.text,
         altPhone: _altPhoneController.text,
         image: _imagePath,
+        lat: _lat,
+        lng: _lng,
       );
 
       // Show loading
@@ -200,10 +252,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       try {
         final authRepo = context.read<AuthRepositoryImpl>();
-        File? imageFile;
-        if (_imagePath != null && !_imagePath!.startsWith('assets')) {
-          imageFile = File(_imagePath!);
-        }
+        // Only pass imageFile if a new image was picked
+        File? imageFile = _pickedImageFile;
 
         final resultUser = await authRepo.updateProfile(
           user: updatedUser,
@@ -271,18 +321,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         color: Colors.grey.shade300,
                         image: _imagePath != null
                             ? DecorationImage(
-                                image: (_imagePath!.startsWith('assets')
-                                    ? AssetImage(_imagePath!)
-                                    : (_imagePath == 'no-photo.jpg'
-                                        ? const AssetImage("assets/images/logo.jpg")
-                                        : (_imagePath!.startsWith('/data') || _imagePath!.startsWith('/storage'))
-                                            ? FileImage(File(_imagePath!))
-                                            : CachedNetworkImageProvider(
-                                                ApiService.getImageUrl(
-                                                  _imagePath!,
-                                                  currentUser?.role ?? 'buyer',
-                                                ),
-                                              ))) as ImageProvider,
+                                image:
+                                    (_imagePath!.startsWith('assets')
+                                            ? AssetImage(_imagePath!)
+                                            : (_imagePath == 'no-photo.jpg'
+                                                  ? const AssetImage(
+                                                      "assets/images/logo.jpg",
+                                                    )
+                                                  : (_imagePath!.startsWith(
+                                                          '/data',
+                                                        ) ||
+                                                        _imagePath!.startsWith(
+                                                          '/storage',
+                                                        ))
+                                                  ? FileImage(File(_imagePath!))
+                                                  : CachedNetworkImageProvider(
+                                                      ApiService.getImageUrl(
+                                                        _imagePath!,
+                                                        currentUser?.role ??
+                                                            'buyer',
+                                                      ),
+                                                    )))
+                                        as ImageProvider,
                                 fit: BoxFit.cover,
                               )
                             : null,
@@ -323,8 +383,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 16),
             _buildTextField("Email", _emailController),
             const SizedBox(height: 16),
-            _buildTextField("Date of Birth", _dobController),
-            const SizedBox(height: 16),
 
             // Province Dropdown
             Container(
@@ -362,12 +420,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 16),
             _buildTextField("City", _cityController),
             const SizedBox(height: 16),
+
             _buildTextField("Home Address", _addressController),
+
+            // Set Farm Location Button (Only for Sellers)
+            if (currentUser?.role == 'seller' ||
+                currentUser?.role == 'farmer') ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoadingLocation ? null : _getLocation,
+                  icon: _isLoadingLocation
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.location_on, color: Colors.white),
+                  label: Text(
+                    _isLoadingLocation
+                        ? "Getting Location..."
+                        : "Set Farm Location (Auto-Fill)",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
-            _buildTextField(
-              "Alternative Phone Number (Optional)",
-              _altPhoneController,
-            ),
+            _buildTextField("Phone Number", _phoneController, readOnly: true),
 
             const SizedBox(height: 30),
 
@@ -414,14 +506,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller) {
+  Widget _buildTextField(
+    String hint,
+    TextEditingController controller, {
+    bool readOnly = false,
+  }) {
     return TextField(
       controller: controller,
+      readOnly: readOnly,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
-        fillColor: const Color(0xFFEEEBEB),
+        fillColor: readOnly ? Colors.grey.shade300 : const Color(0xFFEEEBEB),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,

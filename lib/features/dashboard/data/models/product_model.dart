@@ -10,6 +10,9 @@ class ProductModel extends ProductEntity {
     required super.quantity,
     super.image,
     super.seller,
+    super.sellerLat,
+    super.sellerLng,
+    super.sellerPhone,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +25,13 @@ class ProductModel extends ProductEntity {
       quantity: json['quantity']?.toString() ?? '0',
       image: json['image'],
       seller: json['seller'] is Map ? json['seller']['_id'] : json['seller'],
+      sellerLat: (json['seller'] is Map && json['seller']['location'] != null)
+          ? (json['seller']['location']['coordinates'][1] as num?)?.toDouble()
+          : null,
+      sellerLng: (json['seller'] is Map && json['seller']['location'] != null)
+          ? (json['seller']['location']['coordinates'][0] as num?)?.toDouble()
+          : null,
+      sellerPhone: (json['seller'] is Map) ? json['seller']['phone'] : null,
     );
   }
 

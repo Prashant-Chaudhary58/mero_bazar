@@ -1,131 +1,147 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
+import 'package:mero_bazar/core/services/location_service.dart';
+import 'package:mero_bazar/core/services/api_service.dart';
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../widgets/home_search_widget.dart';
 import '../widgets/product_card_widget.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _fetchProductsWithLocation();
+  }
+
+  Future<void> _fetchProductsWithLocation() async {
+    final productProvider = context.read<ProductProvider>();
+    double? lat;
+    double? lng;
+
+    try {
+      final position = await LocationService.getCurrentPosition();
+      lat = position.latitude;
+      lng = position.longitude;
+      // You might want to store this location in UserProvider or similar for global access
+    } catch (e) {
+      // Handle permission error or service disabled
+      print("Location error in Home: $e");
+    }
+
+    productProvider.fetchProducts(lat: lat, lng: lng);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const HomeSearchWidget(),
-              const SizedBox(height: 20),
-              const HomeBannerWidget(),
-              const SizedBox(height: 24),
-              const Text(
-                "Categories",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: const [
-                    CategoryWidget(title: "All", isSelected: true),
-                    CategoryWidget(title: "Vegetables (तरकारी)"),
-                    CategoryWidget(title: "Fruits (फलफूल)"),
-                  ],
+        child: RefreshIndicator(
+          onRefresh: _fetchProductsWithLocation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const HomeSearchWidget(),
+                const SizedBox(height: 20),
+                const HomeBannerWidget(),
+                const SizedBox(height: 24),
+                const Text(
+                  "Categories",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 20),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _products.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: const [
+                      CategoryWidget(title: "All", isSelected: true),
+                      CategoryWidget(title: "Vegetables (तरकारी)"),
+                      CategoryWidget(title: "Fruits (फलफूल)"),
+                    ],
+                  ),
                 ),
-                itemBuilder: (context, index) {
-                  final product = _products[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context, 
-                        '/product-details', 
-                        arguments: {
-                          'name': product['name'],
-                          'image': product['image'],
-                          'price': "Rs. ${product['price']}/kg", // Formatting price
-                          'isEditable': false,
-                        }
+                const SizedBox(height: 20),
+
+                Consumer<ProductProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (provider.error != null) {
+                      return Center(child: Text('Error: ${provider.error}'));
+                    }
+
+                    if (provider.products.isEmpty) {
+                      return const Center(
+                        child: Text('No products found nearby'),
                       );
-                    },
-                    child: ProductCardWidget(
-                      name: product['name'],
-                      image: product['image'],
-                      rating: product['rating'],
-                      price: product['price'],
-                    ),
-                  );
-                },
-              ),
-            ],
+                    }
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: provider.products.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.72,
+                          ),
+                      itemBuilder: (context, index) {
+                        final product = provider.products[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/product-details',
+                              arguments: {
+                                'name': product.name,
+                                'image': product.image,
+                                'price': "Rs. ${product.price}/kg",
+                                'isEditable': false,
+                                'sellerId': product.seller,
+                                'sellerLat': product.sellerLat,
+                                'sellerLng': product.sellerLng,
+                                'sellerPhone': product.sellerPhone,
+                              },
+                            );
+                          },
+                          child: ProductCardWidget(
+                            name: product.name,
+                            image:
+                                (product.image != null &&
+                                    product.image!.startsWith('http'))
+                                ? product.image!
+                                : ApiService.getImageUrl(
+                                    product.image ?? '',
+                                    'products',
+                                  ),
+                            rating: 0.0, // Rating not in entity yet
+                            price: product.price.toInt(),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-
-final List<Map<String, dynamic>> _products = [
-  {
-    "name": "Maize",
-    "price": 10,
-    "rating": 3.8,
-    "image": "assets/crops/cereals/maize.png",
-  },
-  {
-    "name": "Cabbage",
-    "price": 80,
-    "rating": 4.0,
-    "image": "assets/crops/vegetables/cabbage.png",
-  },
-  {
-    "name": "Potato",
-    "price": 50,
-    "rating": 4.2,
-    "image": "assets/crops/vegetables/Potato.jpg",
-  },
-  {
-    "name": "Brinjal",
-    "price": 60,
-    "rating": 4.1,
-    "image": "assets/crops/vegetables/Brinjal.png",
-  },
-  {
-    "name": "Maize",
-    "price": 20,
-    "rating": 4.0,
-    "image": "assets/crops/cereals/maize.png",
-  },
-  {
-    "name": "Cabbage",
-    "price": 60,
-    "rating": 4.2,
-    "image": "assets/crops/vegetables/cabbage.png",
-  },
-  {
-    "name": "Potato",
-    "price": 45,
-    "rating": 4.0,
-    "image": "assets/crops/vegetables/Potato.jpg",
-  },
-  {
-    "name": "Brinjal",
-    "price": 50,
-    "rating": 3.9,
-    "image": "assets/crops/vegetables/Brinjal.png",
-  },
-];

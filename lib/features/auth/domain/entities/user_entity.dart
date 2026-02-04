@@ -11,6 +11,8 @@ class UserEntity {
   final String? city;
   final String? address;
   final String? altPhone;
+  final double? lat;
+  final double? lng;
 
   const UserEntity({
     this.id,
@@ -25,6 +27,8 @@ class UserEntity {
     this.city,
     this.address,
     this.altPhone,
+    this.lat,
+    this.lng,
   });
 
   UserEntity copyWith({
@@ -38,6 +42,8 @@ class UserEntity {
     String? city,
     String? address,
     String? altPhone,
+    double? lat,
+    double? lng,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -52,6 +58,8 @@ class UserEntity {
       city: city ?? this.city,
       address: address ?? this.address,
       altPhone: altPhone ?? this.altPhone,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
     );
   }
 }

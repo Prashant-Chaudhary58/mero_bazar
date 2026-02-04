@@ -21,6 +21,7 @@ import 'package:mero_bazar/features/dashboard/data/repositories/product_reposito
 import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/core/providers/dashboard_provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
 
 class MyApp extends StatelessWidget {
   final UserModel? initialUser;
@@ -88,6 +89,11 @@ class MyApp extends StatelessWidget {
           ),
           update: (_, useCase, userProvider, __) =>
               SignupViewModel(useCase, userProvider),
+        ),
+        ChangeNotifierProxyProvider<ProductRepositoryImpl, ProductProvider>(
+          create: (context) =>
+              ProductProvider(context.read<ProductRepositoryImpl>()),
+          update: (_, repo, previous) => ProductProvider(repo),
         ),
       ],
       child: MaterialApp(

@@ -4,7 +4,11 @@ import '../models/product_model.dart';
 import 'dart:io';
 
 abstract class ProductRemoteDataSource {
-  Future<List<ProductModel>> getAllProducts();
+  Future<List<ProductModel>> getAllProducts({
+    double? lat,
+    double? lng,
+    double? radius,
+  });
   Future<ProductModel> getProduct(String id);
   Future<ProductModel> createProduct(ProductEntity product, File? imageFile);
 }
@@ -15,8 +19,17 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   ProductRemoteDataSourceImpl(this.dio);
 
   @override
-  Future<List<ProductModel>> getAllProducts() async {
-    final response = await dio.get('/products');
+  Future<List<ProductModel>> getAllProducts({
+    double? lat,
+    double? lng,
+    double? radius,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (lat != null) queryParams['lat'] = lat;
+    if (lng != null) queryParams['lng'] = lng;
+    if (radius != null) queryParams['radius'] = radius;
+
+    final response = await dio.get('/products', queryParameters: queryParams);
 
     if (response.statusCode == 200) {
       final List<dynamic> data = response.data['data'];

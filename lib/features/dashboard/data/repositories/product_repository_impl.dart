@@ -9,8 +9,16 @@ class ProductRepositoryImpl implements ProductRepository {
   ProductRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<List<ProductEntity>> getAllProducts() async {
-    return await remoteDataSource.getAllProducts();
+  Future<List<ProductEntity>> getAllProducts({
+    double? lat,
+    double? lng,
+    double? radius,
+  }) async {
+    return await remoteDataSource.getAllProducts(
+      lat: lat,
+      lng: lng,
+      radius: radius,
+    );
   }
 
   @override
