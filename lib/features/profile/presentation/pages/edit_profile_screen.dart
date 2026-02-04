@@ -9,6 +9,8 @@ import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
+import 'package:mero_bazar/features/profile/presentation/pages/map_picker_screen.dart';
+import 'package:latlong2/latlong.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -158,6 +160,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _getLocation() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Set Farm Location"),
+        content: const Text(
+          "How would you like to set your location?\n\nIf you are currently at your farm, use 'Current GPS'.\nIf you are elsewhere, use 'Pick on Map'.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _getGPSLocation();
+            },
+            child: const Text("Current GPS"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickLocationManually();
+            },
+            child: const Text("Pick on Map"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickLocationManually() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            MapPickerScreen(initialLat: _lat, initialLng: _lng),
+      ),
+    );
+
+    if (result != null && result is LatLng) {
+      setState(() {
+        _lat = result.latitude;
+        _lng = result.longitude;
+        _isLoadingLocation = true;
+      });
+      await _reverseGeocode(_lat!, _lng!);
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  Future<void> _getGPSLocation() async {
     setState(() {
       _isLoadingLocation = true;
     });
@@ -169,27 +221,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _lng = position.longitude;
       });
 
-      final placemark = await LocationService.getAddressFromCoordinates(
-        _lat!,
-        _lng!,
-      );
-      if (placemark != null) {
-        setState(() {
-          // Auto-fill address fields
-          if (_provinces.contains(placemark.administrativeArea)) {
-            _selectedProvince = placemark.administrativeArea;
-          }
-          _districtController.text = placemark.subAdministrativeArea ?? '';
-          _cityController.text = placemark.locality ?? '';
-          _addressController.text =
-              "${placemark.street ?? ''} ${placemark.name ?? ''}".trim();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Location fetched and address updated!"),
-          ),
-        );
-      }
+      await _reverseGeocode(_lat!, _lng!);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -198,6 +230,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _isLoadingLocation = false;
       });
+    }
+  }
+
+  Future<void> _reverseGeocode(double lat, double lng) async {
+    try {
+      final placemark = await LocationService.getAddressFromCoordinates(
+        lat,
+        lng,
+      );
+      if (placemark != null) {
+        setState(() {
+          // Auto-fill address fields
+          if (placemark.administrativeArea != null &&
+              _provinces.contains(placemark.administrativeArea)) {
+            _selectedProvince = placemark.administrativeArea;
+          }
+          _districtController.text = placemark.subAdministrativeArea ?? '';
+          _cityController.text = placemark.locality ?? '';
+          _addressController.text =
+              "${placemark.street ?? ''} ${placemark.name ?? ''}".trim();
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Location updated!")));
+      }
+    } catch (e) {
+      print("Geocoding error: $e");
     }
   }
 
@@ -242,6 +301,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         lat: _lat,
         lng: _lng,
       );
+      print("Saving Profile: Lat: $_lat, Lng: $_lng");
 
       // Show loading
       showDialog(

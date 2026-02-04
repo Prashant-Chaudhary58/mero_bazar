@@ -17,6 +17,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  double? _userLat;
+  double? _userLng;
+
   @override
   void initState() {
     super.initState();
@@ -27,8 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final productProvider = context.read<ProductProvider>();
     double? lat;
     double? lng;
-    double? userLat;
-    double? userLng;
 
     try {
       final position = await LocationService.getCurrentPosition();
@@ -42,9 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
           _userLng = lng;
         });
       }
-      userLat = lat;
-      userLng = lng;
-      // You might want to store this location in UserProvider or similar for global access
+      if (mounted) {
+        setState(() {
+          _userLat = lat;
+          _userLng = lng;
+        });
+      }
+      // to store this location in UserProvider for global access  #for future use
     } catch (e) {
       // Handle permission error or service disabled
       print("Location error in Home: $e");

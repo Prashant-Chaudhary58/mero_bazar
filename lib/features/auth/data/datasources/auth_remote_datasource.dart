@@ -98,8 +98,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'city': user.city ?? '',
       'address': user.address ?? '',
       'altPhone': user.altPhone ?? '',
-      'lat': user.lat,
-      'lng': user.lng,
+      'lat': user.lat?.toString() ?? '',
+      'lng': user.lng?.toString() ?? '',
     };
 
     FormData formData = FormData.fromMap(fields);
