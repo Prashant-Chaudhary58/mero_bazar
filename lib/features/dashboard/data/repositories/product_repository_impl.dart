@@ -48,4 +48,9 @@ class ProductRepositoryImpl implements ProductRepository {
   ) async {
     return await remoteDataSource.addReview(productId, rating, text);
   }
+
+  @override
+  Future<List<ProductEntity>> getMyProducts() async {
+    return await remoteDataSource.getMyProducts();
+  }
 }

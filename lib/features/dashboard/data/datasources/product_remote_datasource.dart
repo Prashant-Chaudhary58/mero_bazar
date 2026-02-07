@@ -14,6 +14,7 @@ abstract class ProductRemoteDataSource {
   Future<ProductModel> createProduct(ProductEntity product, File? imageFile);
   Future<List<ReviewModel>> getReviews(String productId);
   Future<ReviewModel> addReview(String productId, int rating, String text);
+  Future<List<ProductModel>> getMyProducts();
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -112,5 +113,16 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       return ReviewModel.fromJson(response.data['data']);
     }
     throw Exception(response.data['error'] ?? 'Failed to add review');
+  }
+
+  @override
+  Future<List<ProductModel>> getMyProducts() async {
+    final response = await dio.get('/products/my-products');
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['data'];
+      return data.map((e) => ProductModel.fromJson(e)).toList();
+    }
+    throw Exception('Failed to load my products');
   }
 }

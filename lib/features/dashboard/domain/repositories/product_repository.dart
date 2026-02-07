@@ -12,4 +12,5 @@ abstract class ProductRepository {
   Future<ProductEntity> createProduct(ProductEntity product, File? imageFile);
   Future<List<ReviewEntity>> getReviews(String productId);
   Future<ReviewEntity> addReview(String productId, int rating, String text);
+  Future<List<ProductEntity>> getMyProducts();
 }

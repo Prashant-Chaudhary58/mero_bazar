@@ -30,10 +30,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
       if (currentUser == null) return;
 
-      final allProducts = await repo.getAllProducts();
-      final myProducts = allProducts
-          .where((p) => p.seller == currentUser.id)
-          .toList();
+      final myProducts = await repo.getMyProducts();
 
       if (mounted) {
         setState(() {
