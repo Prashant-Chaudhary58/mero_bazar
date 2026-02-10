@@ -4,9 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mero_bazar/core/utils/storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://172.30.111.197:5001';
+  static const String baseUrl = 'http://10.25.25.197:5001';
   static final Dio dio = Dio();
   static bool _isInitialized = false;
 
@@ -40,6 +41,19 @@ class ApiService {
     );
 
     dio.interceptors.add(CookieManager(cookieJar));
+
+    // Add Bearer Token Interceptor
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await SecureStorage.getToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
 
     // auto logout on 401
     dio.interceptors.add(

@@ -27,11 +27,11 @@ class ProductModel extends ProductEntity {
       quantity: json['quantity']?.toString() ?? '0',
       image: json['image'],
       seller: json['seller'] is Map ? json['seller']['_id'] : json['seller'],
-      sellerLat: (json['seller'] is Map && json['seller']['location'] != null)
-          ? (json['seller']['location']['coordinates'][1] as num?)?.toDouble()
+      sellerLat: (json['seller'] is Map && json['seller']['lat'] != null)
+          ? double.tryParse(json['seller']['lat'].toString())
           : null,
-      sellerLng: (json['seller'] is Map && json['seller']['location'] != null)
-          ? (json['seller']['location']['coordinates'][0] as num?)?.toDouble()
+      sellerLng: (json['seller'] is Map && json['seller']['lng'] != null)
+          ? double.tryParse(json['seller']['lng'].toString())
           : null,
       sellerPhone: (json['seller'] is Map) ? json['seller']['phone'] : null,
       averageRating: json['averageRating'] ?? 0.0,

@@ -36,6 +36,11 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
+  Future<void> deleteProduct(String id) async {
+    return await remoteDataSource.deleteProduct(id);
+  }
+
+  @override
   Future<List<ReviewEntity>> getReviews(String productId) async {
     return await remoteDataSource.getReviews(productId);
   }

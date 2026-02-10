@@ -12,6 +12,7 @@ abstract class ProductRemoteDataSource {
   });
   Future<ProductModel> getProduct(String id);
   Future<ProductModel> createProduct(ProductEntity product, File? imageFile);
+  Future<void> deleteProduct(String id);
   Future<List<ReviewModel>> getReviews(String productId);
   Future<ReviewModel> addReview(String productId, int rating, String text);
   Future<List<ProductModel>> getMyProducts();
@@ -85,6 +86,15 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       return ProductModel.fromJson(response.data['data']);
     }
     throw Exception(response.data['error'] ?? 'Failed to create product');
+  }
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    final response = await dio.delete('/products/$id');
+
+    if (response.statusCode != 200) {
+      throw Exception(response.data['error'] ?? 'Failed to delete product');
+    }
   }
 
   @override

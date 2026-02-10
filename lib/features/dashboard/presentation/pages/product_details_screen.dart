@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:mero_bazar/features/dashboard/domain/entities/review_entity.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key});
@@ -22,6 +23,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _priceController;
+
+  String _selectedCategory = "Vegetables";
+  final List<String> _categories = ["Vegetables", "Fruits", "Grains", "Others"];
 
   bool _isEditable = false;
   bool _isNew = false;
@@ -38,6 +42,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int _numOfReviews = 0;
   bool _isLoadingReviews = false;
   String? _productId;
+  String? _distance;
 
   @override
   void didChangeDependencies() {
@@ -53,6 +58,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _sellerLat = args?['sellerLat'];
     _sellerLng = args?['sellerLng'];
     _sellerPhone = args?['sellerPhone'];
+    _productId = args?['id'];
 
     // Initialize controllers with passed data or defaults
     if (_isNew) {
@@ -74,6 +80,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       _quantityController = TextEditingController(
         text: args?['quantity']?.toString() ?? "Out of Stock",
       );
+
+      if (args?['category'] != null &&
+          _categories.contains(args!['category'])) {
+        _selectedCategory = args['category'];
+      }
+
+      // Trigger distance calculation
+      _calculateDistance();
     }
   }
 
@@ -145,6 +159,41 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Seller phone number not available")),
       );
+    }
+  }
+
+  Future<void> _calculateDistance() async {
+    if (_sellerLat == null || _sellerLng == null) return;
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    try {
+      Position userPosition = await Geolocator.getCurrentPosition();
+      double distanceInMeters = Geolocator.distanceBetween(
+        userPosition.latitude,
+        userPosition.longitude,
+        _sellerLat!,
+        _sellerLng!,
+      );
+
+      setState(() {
+        if (distanceInMeters < 1000) {
+          _distance = "${distanceInMeters.toStringAsFixed(0)} m";
+        } else {
+          _distance = "${(distanceInMeters / 1000).toStringAsFixed(1)} km";
+        }
+      });
+    } catch (e) {
+      print("Error calculating distance: $e");
     }
   }
 
@@ -247,6 +296,62 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  Future<void> _confirmDelete() async {
+    final curContext = context;
+    showDialog(
+      context: curContext,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Product"),
+        content: const Text("Are you sure you want to delete this product?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _deleteProduct();
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteProduct() async {
+    if (_productId == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final repo = context.read<ProductRepositoryImpl>();
+      await repo.deleteProduct(_productId!);
+
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Product deleted successfully"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.pop(context); // Pop screen
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to delete: $e")));
+    }
+  }
+
   Future<void> _saveChanges() async {
     if (_titleController.text.isEmpty || _priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -264,7 +369,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             _priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
           ) ??
           0,
-      category: "Vegetables", // TODO: Add Category Dropdown
+      category: _selectedCategory,
       quantity: _quantityController.text,
     );
 
@@ -338,13 +443,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               : null,
           centerTitle: true,
           actions: [
-            if (_isEditable)
+            if (_isEditable) ...[
               IconButton(
                 icon: const Icon(Icons.save, color: Colors.green),
                 onPressed: _saveChanges,
                 tooltip: "Save Changes",
-              )
-            else
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: _confirmDelete,
+                tooltip: "Delete Product",
+              ),
+            ] else
               IconButton(
                 icon: const Icon(Icons.shopping_cart, color: Colors.green),
                 onPressed: () {},
@@ -478,6 +588,47 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           const SizedBox(width: 8),
                           Text(
                             "Available: ${_quantityController.text}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Category Dropdown
+                    if (_isEditable)
+                      DropdownButtonFormField<String>(
+                        value: _selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: "Category",
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category, color: Colors.green),
+                        ),
+                        items: _categories.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedCategory = newValue!;
+                          });
+                        },
+                      )
+                    else
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.category,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Category: $_selectedCategory",
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
@@ -668,7 +819,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           ],
                         ),
                       ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 10),
+                    if (_distance != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "$_distance away",
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 20),
 
                     if (!_isEditable)
                       Row(
