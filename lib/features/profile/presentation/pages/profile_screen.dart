@@ -11,18 +11,16 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final userProvider = Provider.of<UserProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), 
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
-          onPressed: () {
-          },
+          onPressed: () {},
         ),
         centerTitle: true,
         title: const Text(
@@ -57,6 +55,12 @@ class ProfileScreen extends StatelessWidget {
                           Builder(
                             builder: (context) {
                               final user = userProvider.user;
+                              // Debugging: Print role to console
+                              if (user != null) {
+                                debugPrint(
+                                  "DEBUG PROFILE: User Role = '${user.role}'",
+                                );
+                              }
 
                               if (user?.image == null ||
                                   user?.image == 'no-photo.jpg') {
@@ -199,6 +203,31 @@ class ProfileScreen extends StatelessWidget {
 
             if (userProvider.user?.role == 'seller') const SizedBox(height: 10),
 
+            // Admin Dashboard
+            if ((userProvider.user?.role.toLowerCase() == 'admin') ||
+                (userProvider.user?.isAdmin == true))
+              Material(
+                color: Colors.white,
+                child: ListTile(
+                  title: const Text(
+                    "Switch to Admin",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.black,
+                  ),
+                  onTap: () {
+                    Navigator.pushNamed(context, '/admin-dashboard');
+                  },
+                ),
+              ),
+
+            if ((userProvider.user?.role.toLowerCase() == 'admin') ||
+                (userProvider.user?.isAdmin == true))
+              const SizedBox(height: 10),
+
             // Language Option
             Material(
               color: Colors.white,
@@ -261,7 +290,7 @@ class ProfileScreen extends StatelessWidget {
                       context.read<UserProvider>().clearUser();
                       Navigator.pushNamedAndRemoveUntil(
                         context,
-                        '/login',
+                        '/',
                         (route) => false,
                       );
                     }

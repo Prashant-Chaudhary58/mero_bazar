@@ -30,10 +30,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
       if (currentUser == null) return;
 
-      final allProducts = await repo.getAllProducts();
-      final myProducts = allProducts
-          .where((p) => p.seller == currentUser.id)
-          .toList();
+      final myProducts = await repo.getMyProducts();
 
       if (mounted) {
         setState(() {
@@ -96,12 +93,17 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         context,
                         '/product-details',
                         arguments: {
+                          'id': item.id,
                           'name': item.name,
-                          'price': "Rs. ${item.price}",
+                          'price': item.price,
                           'description': item.description,
+                          'category': item.category,
                           'quantity': item.quantity,
                           'image': item.image,
                           'isEditable': true,
+                          'sellerLat': item.sellerLat,
+                          'sellerLng': item.sellerLng,
+                          'sellerPhone': item.sellerPhone,
                         },
                       );
                     },

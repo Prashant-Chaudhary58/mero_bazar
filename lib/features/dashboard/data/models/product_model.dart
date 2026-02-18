@@ -10,6 +10,12 @@ class ProductModel extends ProductEntity {
     required super.quantity,
     super.image,
     super.seller,
+    super.sellerLat,
+    super.sellerLng,
+    super.sellerPhone,
+    super.averageRating = 0.0,
+    super.numOfReviews = 0,
+    super.isVerified = false,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +28,16 @@ class ProductModel extends ProductEntity {
       quantity: json['quantity']?.toString() ?? '0',
       image: json['image'],
       seller: json['seller'] is Map ? json['seller']['_id'] : json['seller'],
+      sellerLat: (json['seller'] is Map && json['seller']['lat'] != null)
+          ? double.tryParse(json['seller']['lat'].toString())
+          : null,
+      sellerLng: (json['seller'] is Map && json['seller']['lng'] != null)
+          ? double.tryParse(json['seller']['lng'].toString())
+          : null,
+      sellerPhone: (json['seller'] is Map) ? json['seller']['phone'] : null,
+      averageRating: json['averageRating'] ?? 0.0,
+      numOfReviews: json['numOfReviews'] ?? 0,
+      isVerified: json['isVerified'] ?? false,
     );
   }
 

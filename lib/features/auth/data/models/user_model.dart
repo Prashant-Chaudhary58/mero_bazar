@@ -56,6 +56,18 @@ class UserModel extends UserEntity {
   @override
   final String? altPhone;
 
+  @HiveField(13)
+  @override
+  final double? lat;
+
+  @HiveField(14)
+  @override
+  final double? lng;
+
+  @HiveField(15)
+  @override
+  final bool isAdmin;
+
   UserModel({
     required this.phone,
     required this.fullName,
@@ -70,6 +82,9 @@ class UserModel extends UserEntity {
     this.city,
     this.address,
     this.altPhone,
+    this.lat,
+    this.lng,
+    this.isAdmin = false,
   }) : super(
          phone: phone,
          fullName: fullName,
@@ -83,6 +98,9 @@ class UserModel extends UserEntity {
          city: city,
          address: address,
          altPhone: altPhone,
+         lat: lat,
+         lng: lng,
+         isAdmin: isAdmin,
        );
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -99,6 +117,13 @@ class UserModel extends UserEntity {
       city: json['city'],
       address: json['address'],
       altPhone: json['altPhone'],
+      lat: json['location'] != null
+          ? (json['location']['coordinates'][1] as num?)?.toDouble()
+          : null,
+      lng: json['location'] != null
+          ? (json['location']['coordinates'][0] as num?)?.toDouble()
+          : null,
+      isAdmin: json['isAdmin'] ?? false,
     );
   }
 
@@ -116,6 +141,9 @@ class UserModel extends UserEntity {
       'city': city,
       'address': address,
       'altPhone': altPhone,
+      'lat': lat,
+      'lng': lng,
+      'isAdmin': isAdmin,
     };
   }
 }

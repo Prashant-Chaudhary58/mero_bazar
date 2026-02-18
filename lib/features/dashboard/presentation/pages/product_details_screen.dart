@@ -6,6 +6,9 @@ import 'package:mero_bazar/features/dashboard/data/repositories/product_reposito
 import 'package:mero_bazar/features/dashboard/domain/entities/product_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
+import 'package:mero_bazar/core/services/location_service.dart';
+import 'package:mero_bazar/features/dashboard/domain/entities/review_entity.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key});
@@ -21,11 +24,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   late TextEditingController _quantityController;
   late TextEditingController _priceController;
 
+  String _selectedCategory = "Vegetables";
+  final List<String> _categories = ["Vegetables", "Fruits", "Grains", "Others"];
+
   bool _isEditable = false;
   bool _isNew = false;
   File? _selectedImage;
   String? _assetImage;
+  double? _sellerLat;
+  double? _sellerLng;
+  String? _sellerPhone;
   final ImagePicker _picker = ImagePicker();
+
+  // Ratings
+  List<ReviewEntity> _reviews = [];
+  double _averageRating = 0.0;
+  int _numOfReviews = 0;
+  bool _isLoadingReviews = false;
+  String? _productId;
+  String? _distance;
+  bool _isInitialized = false;
 
   @override
   void didChangeDependencies() {
@@ -38,32 +56,44 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _isEditable = args?['isEditable'] ?? false;
     _isNew = args?['isNew'] ?? false;
     _assetImage = args?['image'] ?? "assets/images/logo.jpg";
+    _sellerLat = args?['sellerLat'];
+    _sellerLng = args?['sellerLng'];
+    _sellerPhone = args?['sellerPhone'];
+    _productId = args?['id'];
 
     // Initialize controllers with passed data or defaults
-    if (_isNew) {
-      _titleController = TextEditingController();
-      _priceController = TextEditingController();
-      _descriptionController = TextEditingController();
-      _quantityController = TextEditingController();
-    } else {
-      _titleController = TextEditingController(
-        text: args?['name'] ?? "ताजा नेपाली आम 🥭",
-      );
-      _priceController = TextEditingController(
-        text: args?['price'] ?? "Rs. 120/kg",
-      );
+    if (!_isInitialized) {
+      if (_isNew) {
+        _titleController = TextEditingController();
+        _priceController = TextEditingController();
+        _descriptionController = TextEditingController();
+        _quantityController = TextEditingController();
+      } else {
+        _titleController = TextEditingController(
+          text: args?['name'] ?? "No Name",
+        );
+        _priceController = TextEditingController(
+          text: args?['price'] != null
+              ? "Rs. ${args!['price']}/kg"
+              : "Rs. 0/kg",
+        );
 
-      const String defaultDescription =
-          "प्रजाति: मालदह, दशहरी, कलकत्ते, बम्बै, सिन्धु, अल्फान्सो\n"
-          "विशेषता: बारीबाट सिधै, पूर्ण पाकेको, रसिलो-मीठो, सुगन्धित, 200-600 ग्राम, कम रासायनिक, जैविक स्वाद\n"
-          "गर्मीयामको राजा – एक टोकाइमै स्वर्ग!";
+        _descriptionController = TextEditingController(
+          text: args?['description'] ?? "No description available.",
+        );
+        _quantityController = TextEditingController(
+          text: args?['quantity']?.toString() ?? "Out of Stock",
+        );
 
-      _descriptionController = TextEditingController(
-        text: args?['description'] ?? defaultDescription,
-      );
-      _quantityController = TextEditingController(
-        text: args?['quantity']?.toString() ?? "500 kg",
-      );
+        if (args?['category'] != null &&
+            _categories.contains(args!['category'])) {
+          _selectedCategory = args!['category'];
+        }
+
+        // Trigger distance calculation
+        _calculateDistance();
+      }
+      _isInitialized = true;
     }
   }
 
@@ -118,10 +148,225 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> _saveChanges() async {
-    if (_titleController.text.isEmpty || _priceController.text.isEmpty) {
+  Future<void> _visitFarm() async {
+    if (_sellerLat != null && _sellerLng != null) {
+      await LocationService.launchMaps(_sellerLat!, _sellerLng!);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Name and Price are required")),
+        const SnackBar(content: Text("Seller location not available")),
+      );
+    }
+  }
+
+  Future<void> _contactSeller() async {
+    if (_sellerPhone != null && _sellerPhone!.isNotEmpty) {
+      await LocationService.launchDialer(_sellerPhone!);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Seller phone number not available")),
+      );
+    }
+  }
+
+  Future<void> _calculateDistance() async {
+    if (_sellerLat == null || _sellerLng == null) return;
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    try {
+      Position userPosition = await Geolocator.getCurrentPosition();
+      double distanceInMeters = Geolocator.distanceBetween(
+        userPosition.latitude,
+        userPosition.longitude,
+        _sellerLat!,
+        _sellerLng!,
+      );
+
+      setState(() {
+        if (distanceInMeters < 1000) {
+          _distance = "${distanceInMeters.toStringAsFixed(0)} m";
+        } else {
+          _distance = "${(distanceInMeters / 1000).toStringAsFixed(1)} km";
+        }
+      });
+    } catch (e) {
+      print("Error calculating distance: $e");
+    }
+  }
+
+  Future<void> _fetchReviews() async {
+    if (_productId == null) return;
+    setState(() => _isLoadingReviews = true);
+
+    try {
+      final repo = context.read<ProductRepositoryImpl>();
+      final reviews = await repo.getReviews(_productId!);
+      setState(() {
+        _reviews = reviews;
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      print("Error fetching reviews: $e");
+      setState(() => _isLoadingReviews = false);
+    }
+  }
+
+  Future<void> _showAddReviewDialog() async {
+    final TextEditingController reviewController = TextEditingController();
+    int selectedRating = 5;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Rate Product"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedRating = index + 1;
+                          });
+                        },
+                        icon: Icon(
+                          index < selectedRating
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: Colors.amber,
+                          size: 32,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: reviewController,
+                    decoration: const InputDecoration(
+                      hintText: "Write a review...",
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (reviewController.text.isEmpty) return;
+                    Navigator.pop(context);
+                    await _addReview(selectedRating, reviewController.text);
+                  },
+                  child: const Text("Submit"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _addReview(int rating, String text) async {
+    if (_productId == null) return;
+
+    try {
+      final repo = context.read<ProductRepositoryImpl>();
+      await repo.addReview(_productId!, rating, text);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Review submitted!")));
+      _fetchReviews();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to submit review: $e")));
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final curContext = context;
+    showDialog(
+      context: curContext,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Product"),
+        content: const Text("Are you sure you want to delete this product?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _deleteProduct();
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteProduct() async {
+    if (_productId == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final repo = context.read<ProductRepositoryImpl>();
+      await repo.deleteProduct(_productId!);
+
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Product deleted successfully"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.pop(context); // Pop screen
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to delete: $e")));
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_titleController.text.isEmpty ||
+        _priceController.text.isEmpty ||
+        _descriptionController.text.isEmpty ||
+        _quantityController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Name, Price, Description and Quantity are required"),
+        ),
       );
       return;
     }
@@ -135,7 +380,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             _priceController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
           ) ??
           0,
-      category: "Vegetables", // TODO: Add Category Dropdown
+      category: _selectedCategory,
       quantity: _quantityController.text,
     );
 
@@ -209,13 +454,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               : null,
           centerTitle: true,
           actions: [
-            if (_isEditable)
+            if (_isEditable) ...[
               IconButton(
                 icon: const Icon(Icons.save, color: Colors.green),
                 onPressed: _saveChanges,
                 tooltip: "Save Changes",
-              )
-            else
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: _confirmDelete,
+                tooltip: "Delete Product",
+              ),
+            ] else
               IconButton(
                 icon: const Icon(Icons.shopping_cart, color: Colors.green),
                 onPressed: () {},
@@ -358,6 +608,47 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     const SizedBox(height: 16),
 
+                    // Category Dropdown
+                    if (_isEditable)
+                      DropdownButtonFormField<String>(
+                        value: _selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: "Category",
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category, color: Colors.green),
+                        ),
+                        items: _categories.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedCategory = newValue!;
+                          });
+                        },
+                      )
+                    else
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.category,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Category: $_selectedCategory",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+
                     // Description
                     if (_isEditable)
                       TextFormField(
@@ -444,18 +735,74 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                     if (!_isEditable)
                       Row(
-                        children: const [
-                          Icon(Icons.star, color: Colors.amber, size: 24),
-                          SizedBox(width: 8),
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 24),
+                          const SizedBox(width: 8),
                           Text(
-                            "4.5",
-                            style: TextStyle(
+                            "$_averageRating ($_numOfReviews reviews)",
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _showAddReviewDialog,
+                            icon: const Icon(Icons.edit),
+                            label: const Text("Write a Review"),
+                          ),
                         ],
                       ),
+                    const SizedBox(height: 16),
+                    if (!_isEditable) ...[
+                      if (_isLoadingReviews)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_reviews.isNotEmpty) ...[
+                        const Text(
+                          "Reviews",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _reviews.length > 3 ? 3 : _reviews.length,
+                          itemBuilder: (context, index) {
+                            final review = _reviews[index];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: CircleAvatar(
+                                child: Text(review.userName?[0] ?? "U"),
+                              ),
+                              title: Text(review.userName ?? "Anonymous"),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: List.generate(5, (starIndex) {
+                                      return Icon(
+                                        starIndex < review.rating
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        size: 14,
+                                        color: Colors.amber,
+                                      );
+                                    }),
+                                  ),
+                                  Text(review.text),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 16),
 
                     if (!_isEditable)
@@ -483,14 +830,44 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           ],
                         ),
                       ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 10),
+                    if (_distance != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "$_distance away",
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 20),
 
                     if (!_isEditable)
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {},
+                              onPressed: _visitFarm,
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(color: Colors.green),
                                 padding: const EdgeInsets.symmetric(
@@ -513,7 +890,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: _contactSeller,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A7C20),
                                 padding: const EdgeInsets.symmetric(

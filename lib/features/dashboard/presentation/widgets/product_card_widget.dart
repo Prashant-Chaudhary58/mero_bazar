@@ -7,6 +7,7 @@ class ProductCardWidget extends StatelessWidget {
   final String image;
   final double rating;
   final int price;
+  final String? distance;
   final VoidCallback? onFavoriteTap;
 
   const ProductCardWidget({
@@ -15,6 +16,7 @@ class ProductCardWidget extends StatelessWidget {
     required this.image,
     required this.rating,
     required this.price,
+    this.distance,
     this.onFavoriteTap,
   });
 
@@ -42,7 +44,9 @@ class ProductCardWidget extends StatelessWidget {
                         fit: BoxFit.cover,
                       )
                     : CachedNetworkImage(
-                        imageUrl: ApiService.getImageUrl(image, 'products'),
+                        imageUrl: image.startsWith('http')
+                            ? image
+                            : ApiService.getImageUrl(image, 'products'),
                         height: 120,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -91,6 +95,22 @@ class ProductCardWidget extends StatelessWidget {
                     const Icon(Icons.star, size: 16, color: Colors.orange),
                     const SizedBox(width: 4),
                     Text(rating.toString()),
+
+                    if (distance != null) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      Text(
+                        distance!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 6),

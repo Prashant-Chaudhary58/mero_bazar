@@ -21,6 +21,11 @@ import 'package:mero_bazar/features/dashboard/data/repositories/product_reposito
 import 'package:mero_bazar/theme/theme_data.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/core/providers/dashboard_provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/admin_provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/pages/admin/admin_dashboard_screen.dart';
+import 'package:mero_bazar/features/admin/data/datasources/admin_remote_datasource.dart';
+import 'package:mero_bazar/features/admin/data/repositories/admin_repository_impl.dart';
 
 class MyApp extends StatelessWidget {
   final UserModel? initialUser;
@@ -47,6 +52,9 @@ class MyApp extends StatelessWidget {
         Provider<ProductRemoteDataSource>(
           create: (context) => ProductRemoteDataSourceImpl(context.read<Dio>()),
         ),
+        Provider<AdminRemoteDataSource>(
+          create: (context) => AdminRemoteDataSourceImpl(context.read<Dio>()),
+        ),
 
         // Repositories
         ProxyProvider<AuthRemoteDataSource, AuthRepositoryImpl>(
@@ -54,6 +62,9 @@ class MyApp extends StatelessWidget {
         ),
         ProxyProvider<ProductRemoteDataSource, ProductRepositoryImpl>(
           update: (_, dataSource, __) => ProductRepositoryImpl(dataSource),
+        ),
+        ProxyProvider<AdminRemoteDataSource, AdminRepositoryImpl>(
+          update: (_, dataSource, __) => AdminRepositoryImpl(dataSource),
         ),
 
         // UseCases
@@ -89,6 +100,23 @@ class MyApp extends StatelessWidget {
           update: (_, useCase, userProvider, __) =>
               SignupViewModel(useCase, userProvider),
         ),
+        ChangeNotifierProxyProvider<ProductRepositoryImpl, ProductProvider>(
+          create: (context) =>
+              ProductProvider(context.read<ProductRepositoryImpl>()),
+          update: (_, repo, previous) => ProductProvider(repo),
+        ),
+        ChangeNotifierProxyProvider2<
+          ProductRepositoryImpl,
+          AdminRepositoryImpl,
+          AdminProvider
+        >(
+          create: (context) => AdminProvider(
+            context.read<ProductRepositoryImpl>(),
+            context.read<AdminRepositoryImpl>(),
+          ),
+          update: (_, productRepo, adminRepo, previous) =>
+              AdminProvider(productRepo, adminRepo),
+        ),
       ],
       child: MaterialApp(
         title: "Mero Baazar",
@@ -103,6 +131,7 @@ class MyApp extends StatelessWidget {
           '/edit-profile': (context) => const EditProfileScreen(),
           '/my-listings': (context) => const MyListingsScreen(),
           '/product-details': (context) => const ProductDetailsScreen(),
+          '/admin-dashboard': (context) => const AdminDashboardScreen(),
         },
       ),
     );
