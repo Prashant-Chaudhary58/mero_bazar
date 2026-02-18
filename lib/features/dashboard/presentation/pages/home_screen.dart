@@ -120,6 +120,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                       itemBuilder: (context, index) {
                         final product = provider.products[index];
+                        if (_userLat != null &&
+                            _userLng != null &&
+                            product.sellerLat != null &&
+                            product.sellerLng != null) {
+                          final dist =
+                              Geolocator.distanceBetween(
+                                _userLat!,
+                                _userLng!,
+                                product.sellerLat!,
+                                product.sellerLng!,
+                              ) /
+                              1000;
+                          print(
+                            "Distance Debug: Buyer($_userLat, $_userLng) vs Seller(${product.name}: ${product.sellerLat}, ${product.sellerLng}) = $dist km",
+                          );
+                        }
                         return GestureDetector(
                           onTap: () {
                             Navigator.pushNamed(

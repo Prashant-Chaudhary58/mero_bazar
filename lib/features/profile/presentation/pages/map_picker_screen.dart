@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:mero_bazar/core/services/location_service.dart';
 
 class MapPickerScreen extends StatefulWidget {
   final double? initialLat;
@@ -19,35 +20,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     28.3949,
     84.1240,
   ); // Default Center (Nepal)
-  bool _isLoading = true;
+  bool _mapReady = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeLocation();
-  }
-
-  Future<void> _initializeLocation() async {
-    if (widget.initialLat != null && widget.initialLng != null) {
-      _currentCenter = LatLng(widget.initialLat!, widget.initialLng!);
-      _isLoading = false;
-      setState(() {});
-    } else {
-      // Try to get current location
-      try {
-        final position = await Geolocator.getCurrentPosition();
-        _currentCenter = LatLng(position.latitude, position.longitude);
-      } catch (e) {
-        // Fallback to default (Nepal)
-        print("Error getting location for map: $e");
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-    }
+    // Don't fetch immediately. Wait for map to be ready.
   }
 
   void _onPositionChanged(MapCamera position, bool hasGesture) {
@@ -60,10 +38,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
+    // No loading spinner, just map
     return Scaffold(
       appBar: AppBar(
         title: const Text("Pick Farm Location"),
@@ -80,14 +55,19 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _currentCenter,
-              initialZoom: 13.0,
+              initialZoom: 15.0,
               onPositionChanged: _onPositionChanged,
+              onMapReady: () {
+                print("MapPicker: Map Ready");
+                _mapReady = true;
+                // _fetchUserLocation(); // DISABLE AUTO-FETCH to prevent freeze
+              },
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.prashantchaudhary.com.mero_bazar',
-              ),
+              // TileLayer(
+              //   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              //   userAgentPackageName: 'com.prashantchaudhary.com.mero_bazar',
+              // ),
               RichAttributionWidget(
                 attributions: [
                   TextSourceAttribution(
@@ -124,18 +104,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             child: FloatingActionButton(
               child: const Icon(Icons.my_location),
               onPressed: () async {
+                print("MapPicker: FAB Clicked - getting location...");
                 try {
-                  final position = await Geolocator.getCurrentPosition();
+                  final position = await LocationService.getCurrentPosition()
+                      .timeout(const Duration(seconds: 10));
+                  print("MapPicker: Location found: $position");
                   _mapController.move(
                     LatLng(position.latitude, position.longitude),
                     15.0,
                   );
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Could not get current location"),
-                    ),
-                  );
+                  print("MapPicker: FAB Error $e");
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text("Location Error: $e")));
                 }
               },
             ),
