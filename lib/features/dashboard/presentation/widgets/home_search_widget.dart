@@ -6,7 +6,9 @@ import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeSearchWidget extends StatelessWidget {
-  const HomeSearchWidget({super.key});
+  final ValueChanged<String>? onChanged;
+
+  const HomeSearchWidget({super.key, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,7 @@ class HomeSearchWidget extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: TextField(
+            onChanged: onChanged,
             decoration: InputDecoration(
               hintText: "Search",
               prefixIcon: const Icon(Icons.search),

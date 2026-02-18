@@ -19,6 +19,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   double? _userLat;
   double? _userLng;
+  String _selectedCategory = "All";
+  String _searchQuery = "";
+
+  final List<Map<String, String>> _categories = [
+    {"name": "All", "value": "All"},
+    {"name": "Vegetables (तरकारी)", "value": "Vegetables"},
+    {"name": "Fruits (फलफूल)", "value": "Fruits"},
+    {"name": "Grains (अन्न)", "value": "Grains"},
+    {"name": "Others (अन्य)", "value": "Others"},
+  ];
 
   @override
   void initState() {
@@ -70,7 +80,13 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const HomeSearchWidget(),
+                HomeSearchWidget(
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
                 const SizedBox(height: 20),
                 const HomeBannerWidget(),
                 const SizedBox(height: 24),
@@ -82,11 +98,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: const [
-                      CategoryWidget(title: "All", isSelected: true),
-                      CategoryWidget(title: "Vegetables (तरकारी)"),
-                      CategoryWidget(title: "Fruits (फलफूल)"),
-                    ],
+                    children: _categories.map((cat) {
+                      return CategoryWidget(
+                        title: cat["name"]!,
+                        isSelected: _selectedCategory == cat["value"],
+                        onTap: () {
+                          setState(() {
+                            _selectedCategory = cat["value"]!;
+                          });
+                        },
+                      );
+                    }).toList(),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -107,10 +129,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
+                    final allProducts = provider.products;
+                    final filteredProducts = allProducts.where((p) {
+                      final matchesCategory =
+                          _selectedCategory == "All" ||
+                          p.category == _selectedCategory;
+                      final matchesSearch = p.name.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      );
+                      return matchesCategory && matchesSearch;
+                    }).toList();
+
+                    if (filteredProducts.isEmpty) {
+                      return const Center(
+                        child: Text('No products found in this category'),
+                      );
+                    }
+
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: provider.products.length,
+                      itemCount: filteredProducts.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
@@ -119,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             childAspectRatio: 0.72,
                           ),
                       itemBuilder: (context, index) {
-                        final product = provider.products[index];
+                        final product = filteredProducts[index];
                         if (_userLat != null &&
                             _userLng != null &&
                             product.sellerLat != null &&

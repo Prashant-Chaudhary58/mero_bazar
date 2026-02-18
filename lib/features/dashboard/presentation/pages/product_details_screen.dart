@@ -43,6 +43,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isLoadingReviews = false;
   String? _productId;
   String? _distance;
+  bool _isInitialized = false;
 
   @override
   void didChangeDependencies() {
@@ -61,33 +62,38 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _productId = args?['id'];
 
     // Initialize controllers with passed data or defaults
-    if (_isNew) {
-      _titleController = TextEditingController();
-      _priceController = TextEditingController();
-      _descriptionController = TextEditingController();
-      _quantityController = TextEditingController();
-    } else {
-      _titleController = TextEditingController(
-        text: args?['name'] ?? "No Name",
-      );
-      _priceController = TextEditingController(
-        text: args?['price'] != null ? "Rs. ${args!['price']}/kg" : "Rs. 0/kg",
-      );
+    if (!_isInitialized) {
+      if (_isNew) {
+        _titleController = TextEditingController();
+        _priceController = TextEditingController();
+        _descriptionController = TextEditingController();
+        _quantityController = TextEditingController();
+      } else {
+        _titleController = TextEditingController(
+          text: args?['name'] ?? "No Name",
+        );
+        _priceController = TextEditingController(
+          text: args?['price'] != null
+              ? "Rs. ${args!['price']}/kg"
+              : "Rs. 0/kg",
+        );
 
-      _descriptionController = TextEditingController(
-        text: args?['description'] ?? "No description available.",
-      );
-      _quantityController = TextEditingController(
-        text: args?['quantity']?.toString() ?? "Out of Stock",
-      );
+        _descriptionController = TextEditingController(
+          text: args?['description'] ?? "No description available.",
+        );
+        _quantityController = TextEditingController(
+          text: args?['quantity']?.toString() ?? "Out of Stock",
+        );
 
-      if (args?['category'] != null &&
-          _categories.contains(args!['category'])) {
-        _selectedCategory = args['category'];
+        if (args?['category'] != null &&
+            _categories.contains(args!['category'])) {
+          _selectedCategory = args!['category'];
+        }
+
+        // Trigger distance calculation
+        _calculateDistance();
       }
-
-      // Trigger distance calculation
-      _calculateDistance();
+      _isInitialized = true;
     }
   }
 
@@ -353,9 +359,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   Future<void> _saveChanges() async {
-    if (_titleController.text.isEmpty || _priceController.text.isEmpty) {
+    if (_titleController.text.isEmpty ||
+        _priceController.text.isEmpty ||
+        _descriptionController.text.isEmpty ||
+        _quantityController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Name and Price are required")),
+        const SnackBar(
+          content: Text("Name, Price, Description and Quantity are required"),
+        ),
       );
       return;
     }
