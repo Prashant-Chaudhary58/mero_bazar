@@ -10,8 +10,19 @@ abstract class ProductRepository {
   });
   Future<ProductEntity> getProduct(String id);
   Future<ProductEntity> createProduct(ProductEntity product, File? imageFile);
+  Future<ProductEntity> updateProduct(
+    String id,
+    ProductEntity product,
+    File? imageFile,
+  );
   Future<void> deleteProduct(String id);
   Future<List<ReviewEntity>> getReviews(String productId);
   Future<ReviewEntity> addReview(String productId, int rating, String text);
   Future<List<ProductEntity>> getMyProducts();
+
+  // Admin Methods
+  Future<Map<String, dynamic>> getStats();
+  Future<List<ProductEntity>> getPendingProducts();
+  Future<void> verifyProduct(String id);
+  Future<void> denyProduct(String id);
 }

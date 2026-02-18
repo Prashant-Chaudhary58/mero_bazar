@@ -36,6 +36,15 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
+  Future<ProductEntity> updateProduct(
+    String id,
+    ProductEntity product,
+    File? imageFile,
+  ) async {
+    return await remoteDataSource.updateProduct(id, product, imageFile);
+  }
+
+  @override
   Future<void> deleteProduct(String id) async {
     return await remoteDataSource.deleteProduct(id);
   }
@@ -57,5 +66,25 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<List<ProductEntity>> getMyProducts() async {
     return await remoteDataSource.getMyProducts();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStats() async {
+    return await remoteDataSource.getStats();
+  }
+
+  @override
+  Future<List<ProductEntity>> getPendingProducts() async {
+    return await remoteDataSource.getPendingProducts();
+  }
+
+  @override
+  Future<void> verifyProduct(String id) async {
+    return await remoteDataSource.verifyProduct(id);
+  }
+
+  @override
+  Future<void> denyProduct(String id) async {
+    return await remoteDataSource.denyProduct(id);
   }
 }

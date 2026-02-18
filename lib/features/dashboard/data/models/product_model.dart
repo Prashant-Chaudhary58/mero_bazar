@@ -15,6 +15,7 @@ class ProductModel extends ProductEntity {
     super.sellerPhone,
     super.averageRating = 0.0,
     super.numOfReviews = 0,
+    super.isVerified = false,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +37,7 @@ class ProductModel extends ProductEntity {
       sellerPhone: (json['seller'] is Map) ? json['seller']['phone'] : null,
       averageRating: json['averageRating'] ?? 0.0,
       numOfReviews: json['numOfReviews'] ?? 0,
+      isVerified: json['isVerified'] ?? false,
     );
   }
 

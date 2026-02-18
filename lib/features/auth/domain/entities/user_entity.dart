@@ -13,12 +13,13 @@ class UserEntity {
   final String? altPhone;
   final double? lat;
   final double? lng;
+  final bool isAdmin;
 
   const UserEntity({
-    this.id,
     required this.phone,
     required this.fullName,
     required this.role,
+    this.id,
     this.image,
     this.email,
     this.dob,
@@ -29,6 +30,7 @@ class UserEntity {
     this.altPhone,
     this.lat,
     this.lng,
+    this.isAdmin = false,
   });
 
   UserEntity copyWith({

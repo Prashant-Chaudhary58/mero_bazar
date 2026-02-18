@@ -25,6 +25,10 @@ class ApiService {
     return '$baseUrl/uploads/users/$imageName';
   }
 
+  static String getProductImageUrl(String imageName) {
+    return getImageUrl(imageName, 'products');
+  }
+
   static Future<void> initialize() async {
     if (_isInitialized) return;
 

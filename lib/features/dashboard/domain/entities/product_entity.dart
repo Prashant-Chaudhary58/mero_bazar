@@ -13,6 +13,7 @@ class ProductEntity {
   final String? sellerPhone;
   final num averageRating;
   final int numOfReviews;
+  final bool isVerified;
 
   ProductEntity({
     this.id,
@@ -28,5 +29,6 @@ class ProductEntity {
     this.sellerPhone,
     this.averageRating = 0.0,
     this.numOfReviews = 0,
+    this.isVerified = false,
   });
 }
