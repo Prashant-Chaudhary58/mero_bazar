@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/profile_screen.dart';
-import 'cart_screen.dart';
+import 'package:mero_bazar/features/chat/presentation/pages/chat_list_screen.dart';
 import 'favourite_screen.dart';
 import 'home_screen.dart';
 
@@ -20,7 +20,7 @@ class _DashboardViewState extends State<DashboardView> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    CartScreen(),
+    ChatListScreen(),
     FavouriteScreen(),
     ProfileScreen(),
   ];
@@ -96,10 +96,7 @@ class _DashboardViewState extends State<DashboardView> {
           },
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_basket),
-              label: "Cart",
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
             BottomNavigationBarItem(
               icon: Icon(Icons.favorite),
               label: "Favourite",

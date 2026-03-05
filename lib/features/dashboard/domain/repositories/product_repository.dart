@@ -17,7 +17,12 @@ abstract class ProductRepository {
   );
   Future<void> deleteProduct(String id);
   Future<List<ReviewEntity>> getReviews(String productId);
-  Future<ReviewEntity> addReview(String productId, int rating, String text);
+  Future<ReviewEntity> addReview(
+    String productId,
+    String title,
+    int rating,
+    String text,
+  );
   Future<List<ProductEntity>> getMyProducts();
 
   // Admin Methods
