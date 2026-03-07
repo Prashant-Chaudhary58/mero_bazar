@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
@@ -22,6 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = "All";
   String _searchQuery = "";
 
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+  DateTime? _lastShake;
+
   final List<Map<String, String>> _categories = [
     {"name": "All", "value": "All"},
     {"name": "Vegetables (तरकारी)", "value": "Vegetables"},
@@ -34,6 +40,43 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchProductsWithLocation();
+
+    // Listen to accelerometer events for Shake-to-Refresh
+    _accelerometerSubscription = accelerometerEvents.listen((
+      AccelerometerEvent event,
+    ) {
+      double gX = event.x / 9.80665;
+      double gY = event.y / 9.80665;
+      double gZ = event.z / 9.80665;
+
+      // Calculate total G-force
+      double gForce = sqrt(gX * gX + gY * gY + gZ * gZ);
+
+      // Threshold around 2.5G usually works well for intentional shakes
+      if (gForce > 2.5) {
+        final now = DateTime.now();
+        if (_lastShake == null ||
+            now.difference(_lastShake!) > const Duration(seconds: 2)) {
+          _lastShake = now;
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Shake detected! Refreshing marketplace..."),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+          _fetchProductsWithLocation();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _accelerometerSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchProductsWithLocation() async {

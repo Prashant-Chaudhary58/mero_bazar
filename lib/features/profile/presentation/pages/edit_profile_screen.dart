@@ -11,6 +11,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/map_picker_screen.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:flutter/services.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -35,6 +37,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   double? _lat;
   double? _lng;
   bool _isLoadingLocation = false;
+
+  // Biometrics
+  final LocalAuthentication _auth = LocalAuthentication();
+  bool _isAuthenticated = false;
 
   final List<String> _provinces = [
     "Koshi",
@@ -68,6 +74,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _lat = user?.lat;
     _lng = user?.lng;
     _imagePath = user?.image;
+
+    _authenticateWithBiometrics();
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+      final bool canAuthenticate =
+          canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+
+      if (!canAuthenticate) {
+        // Fallback if device doesn't support biometrics
+        setState(() => _isAuthenticated = true);
+        return;
+      }
+
+      final bool didAuthenticate = await _auth.authenticate(
+        localizedReason: 'Please authenticate to view and edit your profile',
+        biometricOnly: false,
+        persistAcrossBackgrounding: true,
+      );
+
+      if (mounted) {
+        if (didAuthenticate) {
+          setState(() => _isAuthenticated = true);
+        } else {
+          // If they cancel or fail, go back
+          Navigator.pop(context);
+        }
+      }
+    } on PlatformException catch (e) {
+      print("Error auth: $e");
+      // Fallback: If biometrics crash or error out, just let them in to avoid locking out.
+      if (mounted) setState(() => _isAuthenticated = true);
+    }
   }
 
   @override
@@ -378,207 +419,236 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Profile Image Edit
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade300,
-                        image: _imagePath != null
-                            ? DecorationImage(
-                                image:
-                                    (_imagePath!.startsWith('assets')
-                                            ? AssetImage(_imagePath!)
-                                            : (_imagePath == 'no-photo.jpg'
-                                                  ? const AssetImage(
-                                                      "assets/images/logo.jpg",
-                                                    )
-                                                  : (_imagePath!.startsWith(
-                                                          '/data',
-                                                        ) ||
-                                                        _imagePath!.startsWith(
-                                                          '/storage',
-                                                        ))
-                                                  ? FileImage(File(_imagePath!))
-                                                  : CachedNetworkImageProvider(
-                                                      ApiService.getImageUrl(
-                                                        _imagePath!,
-                                                        currentUser?.role ??
-                                                            'buyer',
-                                                      ),
-                                                    )))
-                                        as ImageProvider,
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      child: _imagePath == null
-                          ? const Icon(
-                              Icons.person,
-                              size: 50,
+      body: !_isAuthenticated
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock, size: 60, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text("Authenticating...", style: TextStyle(fontSize: 16)),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Profile Image Edit
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade300,
+                              image: _imagePath != null
+                                  ? DecorationImage(
+                                      image:
+                                          (_imagePath!.startsWith('assets')
+                                                  ? AssetImage(_imagePath!)
+                                                  : (_imagePath ==
+                                                            'no-photo.jpg'
+                                                        ? const AssetImage(
+                                                            "assets/images/logo.jpg",
+                                                          )
+                                                        : (_imagePath!
+                                                                  .startsWith(
+                                                                    '/data',
+                                                                  ) ||
+                                                              _imagePath!
+                                                                  .startsWith(
+                                                                    '/storage',
+                                                                  ))
+                                                        ? FileImage(
+                                                            File(_imagePath!),
+                                                          )
+                                                        : CachedNetworkImageProvider(
+                                                            ApiService.getImageUrl(
+                                                              _imagePath!,
+                                                              currentUser
+                                                                      ?.role ??
+                                                                  'buyer',
+                                                            ),
+                                                          )))
+                                              as ImageProvider,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: _imagePath == null
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
                               color: Colors.white,
-                            )
-                          : null,
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              "Edit",
+                              style: TextStyle(fontSize: 12),
+                            ),
                           ),
                         ],
                       ),
-                      child: const Text("Edit", style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  _buildTextField("Full Name", _fullNameController),
+                  const SizedBox(height: 16),
+                  _buildTextField("Email", _emailController),
+                  const SizedBox(height: 16),
+
+                  // Province Dropdown
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEEBEB),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade400),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedProvince,
+                        hint: const Text(
+                          "Province",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        isExpanded: true,
+                        items: _provinces.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedProvince = newValue;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  _buildTextField("District", _districtController),
+                  const SizedBox(height: 16),
+                  _buildTextField("City", _cityController),
+                  const SizedBox(height: 16),
+
+                  _buildTextField("Home Address", _addressController),
+
+                  // Set Farm Location Button (Only for Sellers)
+                  if (currentUser?.role == 'seller' ||
+                      currentUser?.role == 'farmer') ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoadingLocation ? null : _getLocation,
+                        icon: _isLoadingLocation
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                              ),
+                        label: Text(
+                          _isLoadingLocation
+                              ? "Getting Location..."
+                              : "Set Farm Location (Auto-Fill)",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 30),
-
-            _buildTextField("Full Name", _fullNameController),
-            const SizedBox(height: 16),
-            _buildTextField("Email", _emailController),
-            const SizedBox(height: 16),
-
-            // Province Dropdown
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEEBEB),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade400),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedProvince,
-                  hint: const Text(
-                    "Province",
-                    style: TextStyle(color: Colors.grey),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    "Phone Number",
+                    _phoneController,
+                    readOnly: true,
                   ),
-                  isExpanded: true,
-                  items: _provinces.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedProvince = newValue;
-                    });
-                  },
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 16),
-            _buildTextField("District", _districtController),
-            const SizedBox(height: 16),
-            _buildTextField("City", _cityController),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 30),
 
-            _buildTextField("Home Address", _addressController),
-
-            // Set Farm Location Button (Only for Sellers)
-            if (currentUser?.role == 'seller' ||
-                currentUser?.role == 'farmer') ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoadingLocation ? null : _getLocation,
-                  icon: _isLoadingLocation
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                  // Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green,
+                            side: const BorderSide(color: Colors.green),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        )
-                      : const Icon(Icons.location_on, color: Colors.white),
-                  label: Text(
-                    _isLoadingLocation
-                        ? "Getting Location..."
-                        : "Set Farm Location (Auto-Fill)",
-                    style: const TextStyle(color: Colors.white),
+                          child: const Text("Edit"),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(
+                              0xFF4A7C2E,
+                            ), // Dark Green
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            "Save",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
+                  const SizedBox(height: 20),
+                ],
               ),
-            ],
-
-            const SizedBox(height: 16),
-            _buildTextField("Phone Number", _phoneController, readOnly: true),
-
-            const SizedBox(height: 30),
-
-            // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.green,
-                      side: const BorderSide(color: Colors.green),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text("Edit"),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _saveProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4A7C2E), // Dark Green
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      "Save",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 
