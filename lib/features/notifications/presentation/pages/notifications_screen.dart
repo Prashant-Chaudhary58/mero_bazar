@@ -5,6 +5,7 @@ import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:mero_bazar/l10n/app_localizations.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -29,6 +30,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
+          onPressed: () {
+            context.read<DashboardProvider>().setSelectedIndex(0);
+          },
+        ),
         title: Text(
           l10n.notifications,
           style: const TextStyle(

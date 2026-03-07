@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/core/services/auth_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -23,7 +24,9 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            context.read<DashboardProvider>().setSelectedIndex(0);
+          },
         ),
         centerTitle: true,
         title: Text(
@@ -96,7 +99,7 @@ class ProfileScreen extends StatelessWidget {
                               // Server Image
                               final imageUrl = ApiService.getImageUrl(
                                 user.image,
-                                user.role ?? 'buyer',
+                                user.role,
                               );
 
                               return CachedNetworkImage(

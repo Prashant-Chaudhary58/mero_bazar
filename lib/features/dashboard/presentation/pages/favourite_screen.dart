@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 
 class FavouriteScreen extends StatelessWidget {
   const FavouriteScreen({super.key});
@@ -12,6 +13,12 @@ class FavouriteScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
+          onPressed: () {
+            context.read<DashboardProvider>().setSelectedIndex(0);
+          },
+        ),
         title: const Text(
           "Favorite Sellers",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
