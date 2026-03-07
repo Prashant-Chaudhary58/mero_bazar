@@ -39,7 +39,7 @@ class ProductModel extends ProductEntity {
           ? double.tryParse(json['seller']['lng'].toString())
           : null,
       sellerPhone: (json['seller'] is Map) ? json['seller']['phone'] : null,
-      averageRating: json['averageRating'] ?? 0.0,
+      averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
       numOfReviews: json['numOfReviews'] ?? 0,
       isVerified: json['isVerified'] ?? false,
     );

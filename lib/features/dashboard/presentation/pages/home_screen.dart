@@ -250,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               return ProductCardWidget(
                                 name: product.name,
                                 image: product.image ?? '',
-                                rating: 0.0,
+                                rating: product.averageRating.toDouble(),
                                 price: product.price.toInt(),
                                 isFavorite: favProvider.isFavorite(
                                   product.seller,
