@@ -34,6 +34,9 @@ import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.da
 import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
 import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 import 'package:mero_bazar/features/notifications/presentation/pages/notifications_screen.dart';
+import 'package:mero_bazar/core/providers/language_provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mero_bazar/l10n/app_localizations.dart';
 
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
@@ -53,6 +56,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
 
         // External
         Provider<Dio>.value(value: ApiService.dio),
@@ -162,24 +166,36 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
       ],
-      child: MaterialApp(
-        title: "Mero Baazar",
-        scaffoldMessengerKey: scaffoldMessengerKey,
-        debugShowCheckedModeBanner: false,
-        theme: getApplicationTheme(),
-        initialRoute: initialUser != null ? '/bottomnav' : '/',
-        routes: {
-          '/': (context) => const RoleSelectionScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const SignupScreen(),
-          '/bottomnav': (context) => const DashboardView(),
-          '/edit-profile': (context) => const EditProfileScreen(),
-          '/my-listings': (context) => const MyListingsScreen(),
-          '/product-details': (context) => const ProductDetailsScreen(),
-          '/admin-dashboard': (context) => const AdminDashboardScreen(),
-          '/chat-list': (context) => const ChatListScreen(),
-          '/chat-details': (context) => const ChatScreen(),
-          '/notifications': (context) => const NotificationsScreen(),
+      child: Consumer<LanguageProvider>(
+        builder: (context, langProvider, child) {
+          return MaterialApp(
+            title: "Mero Baazar",
+            scaffoldMessengerKey: scaffoldMessengerKey,
+            debugShowCheckedModeBanner: false,
+            theme: getApplicationTheme(),
+            locale: langProvider.locale,
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: [Locale('en'), Locale('ne')],
+            initialRoute: initialUser != null ? '/bottomnav' : '/',
+            routes: {
+              '/': (context) => const RoleSelectionScreen(),
+              '/login': (context) => const LoginScreen(),
+              '/signup': (context) => const SignupScreen(),
+              '/bottomnav': (context) => const DashboardView(),
+              '/edit-profile': (context) => const EditProfileScreen(),
+              '/my-listings': (context) => const MyListingsScreen(),
+              '/product-details': (context) => const ProductDetailsScreen(),
+              '/admin-dashboard': (context) => const AdminDashboardScreen(),
+              '/chat-list': (context) => const ChatListScreen(),
+              '/chat-details': (context) => const ChatScreen(),
+              '/notifications': (context) => const NotificationsScreen(),
+            },
+          );
         },
       ),
     );

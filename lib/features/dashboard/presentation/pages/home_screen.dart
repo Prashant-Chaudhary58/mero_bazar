@@ -10,6 +10,7 @@ import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_pr
 import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 import 'package:mero_bazar/core/providers/user_provider.dart';
 
+import 'package:mero_bazar/l10n/app_localizations.dart';
 import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
@@ -32,12 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
   DateTime? _lastShake;
 
-  final List<Map<String, String>> _categories = [
-    {"name": "All", "value": "All"},
-    {"name": "Vegetables (तरकारी)", "value": "Vegetables"},
-    {"name": "Fruits (फलफूल)", "value": "Fruits"},
-    {"name": "Grains (अन्न)", "value": "Grains"},
-    {"name": "Others (अन्य)", "value": "Others"},
+  List<Map<String, String>> _getCategories(AppLocalizations l10n) => [
+    {"name": l10n.all, "value": "All"},
+    {"name": l10n.vegetables, "value": "Vegetables"},
+    {"name": l10n.fruits, "value": "Fruits"},
+    {"name": l10n.grains, "value": "Grains"},
+    {"name": l10n.others, "value": "Others"},
   ];
 
   @override
@@ -91,15 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final position = await LocationService.getCurrentPosition();
       lat = position.latitude;
-      lat = position.latitude;
       lng = position.longitude;
 
-      if (mounted) {
-        setState(() {
-          _userLat = lat;
-          _userLng = lng;
-        });
-      }
       if (mounted) {
         setState(() {
           _userLat = lat;
@@ -117,6 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final categories = _getCategories(l10n);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE),
       body: SafeArea(
@@ -137,15 +134,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 const HomeBannerWidget(),
                 const SizedBox(height: 24),
-                const Text(
-                  "Categories",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.categories,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: _categories.map((cat) {
+                    children: categories.map((cat) {
                       return CategoryWidget(
                         title: cat["name"]!,
                         isSelected: _selectedCategory == cat["value"],

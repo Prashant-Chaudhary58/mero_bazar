@@ -5,6 +5,8 @@ import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/core/services/auth_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
+import 'package:mero_bazar/core/providers/language_provider.dart';
+import 'package:mero_bazar/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -12,6 +14,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -20,12 +23,12 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
-          onPressed: () {},
+          onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "My Account",
-          style: TextStyle(
+        title: Text(
+          l10n.myAccount,
+          style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -151,16 +154,18 @@ class ProfileScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Hello, ${userProvider.user?.fullName ?? 'User'}",
+                              l10n.helloUser(
+                                userProvider.user?.fullName ?? 'User',
+                              ),
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              "view & edit your profile",
-                              style: TextStyle(
+                            Text(
+                              l10n.viewEditProfile,
+                              style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 13,
                               ),
@@ -186,9 +191,9 @@ class ProfileScreen extends StatelessWidget {
               Material(
                 color: Colors.white,
                 child: ListTile(
-                  title: const Text(
-                    "My Listing",
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  title: Text(
+                    l10n.myListing,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
@@ -209,9 +214,9 @@ class ProfileScreen extends StatelessWidget {
               Material(
                 color: Colors.white,
                 child: ListTile(
-                  title: const Text(
-                    "Switch to Admin",
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  title: Text(
+                    l10n.switchToAdmin,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
@@ -232,18 +237,29 @@ class ProfileScreen extends StatelessWidget {
             Material(
               color: Colors.white,
               child: ListTile(
-                title: const Text(
-                  "Language",
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                title: Text(
+                  l10n.language,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.black,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.watch<LanguageProvider>().locale.languageCode ==
+                              'ne'
+                          ? "Nepali"
+                          : "English",
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.black,
+                    ),
+                  ],
                 ),
-                onTap: () {
-                  // Handle language selection
-                },
+                onTap: () => _showLanguageDialog(context),
               ),
             ),
 
@@ -253,9 +269,9 @@ class ProfileScreen extends StatelessWidget {
             Material(
               color: Colors.white,
               child: ListTile(
-                title: const Text(
-                  "Logout",
-                  style: TextStyle(
+                title: Text(
+                  l10n.logout,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.red,
                   ),
@@ -266,18 +282,18 @@ class ProfileScreen extends StatelessWidget {
                   final shouldLogout = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text("Logout"),
-                      content: const Text("Are you sure you want to logout?"),
+                      title: Text(l10n.logoutConfirmTitle),
+                      content: Text(l10n.logoutConfirmMessage),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text("Cancel"),
+                          child: Text(l10n.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
-                          child: const Text(
-                            "Logout",
-                            style: TextStyle(color: Colors.red),
+                          child: Text(
+                            l10n.logout,
+                            style: const TextStyle(color: Colors.red),
                           ),
                         ),
                       ],
@@ -303,6 +319,44 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final langProvider = context.read<LanguageProvider>();
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.language),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text("English"),
+                trailing: langProvider.locale.languageCode == 'en'
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () {
+                  langProvider.setLanguage('en');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text("Nepali (नेपाली)"),
+                trailing: langProvider.locale.languageCode == 'ne'
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () {
+                  langProvider.setLanguage('ne');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

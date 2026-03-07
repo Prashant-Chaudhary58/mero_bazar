@@ -4,6 +4,7 @@ import 'package:mero_bazar/features/notifications/presentation/providers/notific
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:mero_bazar/l10n/app_localizations.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -23,12 +24,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE),
       appBar: AppBar(
-        title: const Text(
-          "Notifications",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.notifications,
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -41,15 +47,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
 
           if (provider.notifications.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_none, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                  const Icon(
+                    Icons.notifications_none,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    "No notifications yet",
-                    style: TextStyle(color: Colors.grey, fontSize: 18),
+                    l10n.noNotifications,
+                    style: const TextStyle(color: Colors.grey, fontSize: 18),
                   ),
                 ],
               ),
@@ -92,10 +102,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                     title: Text(
                       notification.type == 'message'
-                          ? "New Message"
+                          ? l10n.newMessage
                           : (notification.type == 'review'
-                                ? "New Review"
-                                : "New Favorite"),
+                                ? l10n.newReview
+                                : l10n.newFavorite),
                       style: TextStyle(
                         fontWeight: notification.isRead
                             ? FontWeight.normal
