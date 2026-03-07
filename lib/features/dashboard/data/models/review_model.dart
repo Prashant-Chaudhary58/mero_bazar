@@ -15,7 +15,7 @@ class ReviewModel extends ReviewEntity {
       id: json['_id'],
       title: json['title'] ?? '',
       rating: (json['rating'] as num).toDouble(),
-      text: json['text'],
+      text: json['text'] ?? '',
       userName: json['user'] is Map ? json['user']['fullName'] : 'Anonymous',
       userId: json['user'] is Map ? json['user']['_id'] : json['user'],
     );

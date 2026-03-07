@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
@@ -65,9 +66,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 leading: CircleAvatar(
                   backgroundColor: Colors.grey[200],
                   backgroundImage: image != null
-                      ? CachedNetworkImageProvider(
-                          ApiService.getImageUrl(image, 'users'),
-                        )
+                      ? (image.startsWith('file://') || image.startsWith('/')
+                            ? FileImage(File(image.replaceFirst('file://', '')))
+                                  as ImageProvider
+                            : (image.startsWith('http')
+                                  ? NetworkImage(image)
+                                  : CachedNetworkImageProvider(
+                                      ApiService.getImageUrl(image, 'users'),
+                                    )))
                       : null,
                   child: image == null
                       ? const Icon(Icons.person, color: Colors.grey)
@@ -94,6 +100,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       'chatId': chat.id,
                       'receiverName': name,
                       'receiverImage': image,
+                      'receiverPhone': otherUser?['phone'],
                     },
                   ).then((_) {
                     context.read<ChatProvider>().fetchChats();
