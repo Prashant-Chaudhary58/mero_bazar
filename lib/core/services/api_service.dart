@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:mero_bazar/core/utils/storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.68.182.197:5001';
+  static const String baseUrl = 'http://10.83.246.197:5001';
   static final Dio dio = Dio();
   static bool _isInitialized = false;
 

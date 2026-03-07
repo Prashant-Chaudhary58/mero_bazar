@@ -26,6 +26,11 @@ import 'package:mero_bazar/features/dashboard/presentation/providers/admin_provi
 import 'package:mero_bazar/features/dashboard/presentation/pages/admin/admin_dashboard_screen.dart';
 import 'package:mero_bazar/features/admin/data/datasources/admin_remote_datasource.dart';
 import 'package:mero_bazar/features/admin/data/repositories/admin_repository_impl.dart';
+import 'package:mero_bazar/features/chat/data/datasources/chat_remote_datasource.dart';
+import 'package:mero_bazar/features/chat/data/repositories/chat_repository_impl.dart';
+import 'package:mero_bazar/features/chat/presentation/pages/chat_list_screen.dart';
+import 'package:mero_bazar/features/chat/presentation/pages/chat_screen.dart';
+import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.dart';
 
 class MyApp extends StatelessWidget {
   final UserModel? initialUser;
@@ -55,6 +60,9 @@ class MyApp extends StatelessWidget {
         Provider<AdminRemoteDataSource>(
           create: (context) => AdminRemoteDataSourceImpl(context.read<Dio>()),
         ),
+        Provider<ChatRemoteDataSource>(
+          create: (context) => ChatRemoteDataSourceImpl(context.read<Dio>()),
+        ),
 
         // Repositories
         ProxyProvider<AuthRemoteDataSource, AuthRepositoryImpl>(
@@ -65,6 +73,9 @@ class MyApp extends StatelessWidget {
         ),
         ProxyProvider<AdminRemoteDataSource, AdminRepositoryImpl>(
           update: (_, dataSource, __) => AdminRepositoryImpl(dataSource),
+        ),
+        ProxyProvider<ChatRemoteDataSource, ChatRepositoryImpl>(
+          update: (_, dataSource, __) => ChatRepositoryImpl(dataSource),
         ),
 
         // UseCases
@@ -117,6 +128,24 @@ class MyApp extends StatelessWidget {
           update: (_, productRepo, adminRepo, previous) =>
               AdminProvider(productRepo, adminRepo),
         ),
+        ChangeNotifierProxyProvider2<
+          ChatRepositoryImpl,
+          UserProvider,
+          ChatProvider
+        >(
+          create: (context) {
+            final provider = ChatProvider(context.read<ChatRepositoryImpl>());
+            provider.initSocket(context.read<UserProvider>().user);
+            return provider;
+          },
+          update: (_, repo, userProvider, previous) {
+            previous ??= ChatProvider(repo);
+            // We might not want to re-init socket on every update, but for basic setup it can be handled inside initSocket or managed manually
+            if (previous.user != userProvider.user)
+              previous.initSocket(userProvider.user);
+            return previous;
+          },
+        ),
       ],
       child: MaterialApp(
         title: "Mero Baazar",
@@ -132,6 +161,8 @@ class MyApp extends StatelessWidget {
           '/my-listings': (context) => const MyListingsScreen(),
           '/product-details': (context) => const ProductDetailsScreen(),
           '/admin-dashboard': (context) => const AdminDashboardScreen(),
+          '/chat-list': (context) => const ChatListScreen(),
+          '/chat-details': (context) => const ChatScreen(),
         },
       ),
     );

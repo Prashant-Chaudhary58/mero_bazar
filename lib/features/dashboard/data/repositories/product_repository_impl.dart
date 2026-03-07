@@ -57,10 +57,11 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<ReviewEntity> addReview(
     String productId,
+    String title,
     int rating,
     String text,
   ) async {
-    return await remoteDataSource.addReview(productId, rating, text);
+    return await remoteDataSource.addReview(productId, title, rating, text);
   }
 
   @override

@@ -21,7 +21,12 @@ abstract class ProductRemoteDataSource {
   );
   Future<void> deleteProduct(String id);
   Future<List<ReviewModel>> getReviews(String productId);
-  Future<ReviewModel> addReview(String productId, int rating, String text);
+  Future<ReviewModel> addReview(
+    String productId,
+    String title,
+    int rating,
+    String text,
+  );
   Future<List<ProductModel>> getMyProducts();
 
   // Admin Methods
@@ -160,15 +165,16 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   @override
   Future<ReviewModel> addReview(
     String productId,
+    String title,
     int rating,
     String text,
   ) async {
     final response = await dio.post(
       '/products/$productId/reviews',
-      data: {'rating': rating, 'text': text},
+      data: {'title': title, 'rating': rating, 'text': text},
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 201 || response.statusCode == 200) {
       return ReviewModel.fromJson(response.data['data']);
     }
     throw Exception(response.data['error'] ?? 'Failed to add review');

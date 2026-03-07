@@ -9,6 +9,8 @@ import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:mero_bazar/features/dashboard/domain/entities/review_entity.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key});
@@ -33,7 +35,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   String? _assetImage;
   double? _sellerLat;
   double? _sellerLng;
-  String? _sellerPhone;
+  String? _sellerId;
   final ImagePicker _picker = ImagePicker();
 
   // Ratings
@@ -58,7 +60,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _assetImage = args?['image'] ?? "assets/images/logo.jpg";
     _sellerLat = args?['sellerLat'];
     _sellerLng = args?['sellerLng'];
-    _sellerPhone = args?['sellerPhone'];
+    _sellerId = args?['sellerId'];
     _productId = args?['id'];
 
     // Initialize controllers with passed data or defaults
@@ -92,6 +94,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
         // Trigger distance calculation
         _calculateDistance();
+
+        // Fetch reviews
+        if (_productId != null) {
+          _fetchReviews();
+        }
       }
       _isInitialized = true;
     }
@@ -159,12 +166,47 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   Future<void> _contactSeller() async {
-    if (_sellerPhone != null && _sellerPhone!.isNotEmpty) {
-      await LocationService.launchDialer(_sellerPhone!);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Seller phone number not available")),
+    if (_sellerId != null && _sellerId!.isNotEmpty) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
       );
+
+      try {
+        final chatProvider = context.read<ChatProvider>();
+        final chat = await chatProvider.createOrGetChat(_sellerId!);
+
+        if (!mounted) return;
+        Navigator.pop(context); // Pop loading
+
+        if (chat != null) {
+          final otherUser = chat.otherParticipant;
+          Navigator.pushNamed(
+            context,
+            '/chat-details',
+            arguments: {
+              'chatId': chat.id,
+              'receiverName': otherUser?['fullName'] ?? 'Farmer',
+              'receiverImage': otherUser?['image'],
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Could not create chat")),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context); // Pop loading
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Seller ID not available")));
     }
   }
 
@@ -210,8 +252,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     try {
       final repo = context.read<ProductRepositoryImpl>();
       final reviews = await repo.getReviews(_productId!);
+
+      double avg = 0;
+      if (reviews.isNotEmpty) {
+        avg =
+            reviews.map((r) => r.rating).reduce((a, b) => a + b) /
+            reviews.length;
+      }
+
       setState(() {
         _reviews = reviews;
+        _averageRating = double.parse(avg.toStringAsFixed(1));
+        _numOfReviews = reviews.length;
         _isLoadingReviews = false;
       });
     } catch (e) {
@@ -222,6 +274,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _showAddReviewDialog() async {
     final TextEditingController reviewController = TextEditingController();
+    final TextEditingController titleController = TextEditingController();
     int selectedRating = 5;
 
     showDialog(
@@ -234,24 +287,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return IconButton(
-                        onPressed: () {
-                          setState(() {
-                            selectedRating = index + 1;
-                          });
-                        },
-                        icon: Icon(
-                          index < selectedRating
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber,
-                          size: 32,
-                        ),
-                      );
-                    }),
+                  RatingBar.builder(
+                    initialRating: selectedRating.toDouble(),
+                    minRating: 1,
+                    direction: Axis.horizontal,
+                    allowHalfRating: false,
+                    itemCount: 5,
+                    itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    itemBuilder: (context, _) =>
+                        const Icon(Icons.star, color: Colors.amber),
+                    onRatingUpdate: (rating) {
+                      setState(() {
+                        selectedRating = rating.toInt();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      hintText: "Review Title",
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 1,
                   ),
                   const SizedBox(height: 10),
                   TextField(
@@ -271,9 +329,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    if (reviewController.text.isEmpty) return;
+                    if (reviewController.text.isEmpty ||
+                        titleController.text.isEmpty)
+                      return;
                     Navigator.pop(context);
-                    await _addReview(selectedRating, reviewController.text);
+                    await _addReview(
+                      titleController.text,
+                      selectedRating,
+                      reviewController.text,
+                    );
                   },
                   child: const Text("Submit"),
                 ),
@@ -285,12 +349,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> _addReview(int rating, String text) async {
+  Future<void> _addReview(String title, int rating, String text) async {
     if (_productId == null) return;
 
     try {
       final repo = context.read<ProductRepositoryImpl>();
-      await repo.addReview(_productId!, rating, text);
+      await repo.addReview(_productId!, title, rating, text);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Review submitted!")));
@@ -784,16 +848,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: List.generate(5, (starIndex) {
-                                      return Icon(
-                                        starIndex < review.rating
-                                            ? Icons.star
-                                            : Icons.star_border,
-                                        size: 14,
-                                        color: Colors.amber,
-                                      );
-                                    }),
+                                  RatingBarIndicator(
+                                    rating: review.rating,
+                                    itemBuilder: (context, index) => const Icon(
+                                      Icons.star,
+                                      color: Colors.amber,
+                                    ),
+                                    itemCount: 5,
+                                    itemSize: 14.0,
+                                    direction: Axis.horizontal,
                                   ),
                                   Text(review.text),
                                 ],
