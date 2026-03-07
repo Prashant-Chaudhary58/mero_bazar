@@ -8,6 +8,7 @@ class ProductCardWidget extends StatelessWidget {
   final double rating;
   final int price;
   final String? distance;
+  final bool isFavorite;
   final VoidCallback? onFavoriteTap;
 
   const ProductCardWidget({
@@ -17,6 +18,7 @@ class ProductCardWidget extends StatelessWidget {
     required this.rating,
     required this.price,
     this.distance,
+    this.isFavorite = false,
     this.onFavoriteTap,
   });
 
@@ -72,7 +74,10 @@ class ProductCardWidget extends StatelessWidget {
                 right: 8,
                 child: InkWell(
                   onTap: onFavoriteTap,
-                  child: const Icon(Icons.favorite_border, color: Colors.green),
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.green,
+                  ),
                 ),
               ),
             ],

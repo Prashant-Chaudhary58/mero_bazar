@@ -31,6 +31,7 @@ import 'package:mero_bazar/features/chat/data/repositories/chat_repository_impl.
 import 'package:mero_bazar/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:mero_bazar/features/chat/presentation/pages/chat_screen.dart';
 import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
 
 class MyApp extends StatelessWidget {
   final UserModel? initialUser;
@@ -140,12 +141,12 @@ class MyApp extends StatelessWidget {
           },
           update: (_, repo, userProvider, previous) {
             previous ??= ChatProvider(repo);
-            // We might not want to re-init socket on every update, but for basic setup it can be handled inside initSocket or managed manually
             if (previous.user != userProvider.user)
               previous.initSocket(userProvider.user);
             return previous;
           },
         ),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
       ],
       child: MaterialApp(
         title: "Mero Baazar",

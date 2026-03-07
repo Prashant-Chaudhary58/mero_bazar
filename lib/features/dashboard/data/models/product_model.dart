@@ -10,6 +10,8 @@ class ProductModel extends ProductEntity {
     required super.quantity,
     super.image,
     super.seller,
+    super.sellerName,
+    super.sellerImage,
     super.sellerLat,
     super.sellerLng,
     super.sellerPhone,
@@ -28,6 +30,8 @@ class ProductModel extends ProductEntity {
       quantity: json['quantity']?.toString() ?? '0',
       image: json['image'],
       seller: json['seller'] is Map ? json['seller']['_id'] : json['seller'],
+      sellerName: (json['seller'] is Map) ? json['seller']['fullName'] : null,
+      sellerImage: (json['seller'] is Map) ? json['seller']['image'] : null,
       sellerLat: (json['seller'] is Map && json['seller']['lat'] != null)
           ? double.tryParse(json['seller']['lat'].toString())
           : null,

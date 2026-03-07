@@ -6,6 +6,8 @@ import 'package:mero_bazar/features/dashboard/presentation/providers/product_pro
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
+import 'package:mero_bazar/features/auth/data/models/user_model.dart';
 
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
@@ -241,18 +243,48 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             );
                           },
-                          child: ProductCardWidget(
-                            name: product.name,
-                            image: product.image ?? '',
-                            rating: 0.0,
-                            price: product.price.toInt(),
-                            distance:
-                                (_userLat != null &&
-                                    _userLng != null &&
-                                    product.sellerLat != null &&
-                                    product.sellerLng != null)
-                                ? "${(Geolocator.distanceBetween(_userLat!, _userLng!, product.sellerLat!, product.sellerLng!) / 1000).toStringAsFixed(1)} km"
-                                : null,
+                          child: Consumer<FavoriteProvider>(
+                            builder: (context, favProvider, _) {
+                              return ProductCardWidget(
+                                name: product.name,
+                                image: product.image ?? '',
+                                rating: 0.0,
+                                price: product.price.toInt(),
+                                isFavorite: favProvider.isFavorite(
+                                  product.seller,
+                                ),
+                                distance:
+                                    (_userLat != null &&
+                                        _userLng != null &&
+                                        product.sellerLat != null &&
+                                        product.sellerLng != null)
+                                    ? "${(Geolocator.distanceBetween(_userLat!, _userLng!, product.sellerLat!, product.sellerLng!) / 1000).toStringAsFixed(1)} km"
+                                    : null,
+                                onFavoriteTap: () {
+                                  if (product.seller != null) {
+                                    favProvider.toggleFavorite(
+                                      UserModel(
+                                        id: product.seller,
+                                        fullName:
+                                            product.sellerName ??
+                                            "Unknown Seller",
+                                        phone: product.sellerPhone ?? "",
+                                        image: product.sellerImage,
+                                        role: 'seller',
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Seller information not available",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
                           ),
                         );
                       },

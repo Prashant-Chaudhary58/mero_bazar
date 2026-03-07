@@ -8,6 +8,8 @@ class ProductEntity {
   quantity; // Changed from countInStock (int) to quantity (String) for consistency with backend
   final String? image;
   final String? seller;
+  final String? sellerName;
+  final String? sellerImage;
   final double? sellerLat;
   final double? sellerLng;
   final String? sellerPhone;
@@ -24,6 +26,8 @@ class ProductEntity {
     required this.quantity,
     this.image,
     this.seller,
+    this.sellerName,
+    this.sellerImage,
     this.sellerLat,
     this.sellerLng,
     this.sellerPhone,
