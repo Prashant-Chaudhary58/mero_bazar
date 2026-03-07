@@ -4,6 +4,7 @@ import '../../domain/repositories/chat_repository.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:mero_bazar/features/auth/domain/entities/user_entity.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ChatRepository _chatRepository;
@@ -19,6 +20,8 @@ class ChatProvider extends ChangeNotifier {
   UserEntity? _currentUser;
   UserEntity? get user => _currentUser;
 
+  NotificationProvider? _notificationProvider;
+
   List<ChatEntity> get chats => _chats;
   List<MessageEntity> get currentMessages => _currentMessages;
   bool get isLoading => _isLoading;
@@ -26,8 +29,12 @@ class ChatProvider extends ChangeNotifier {
 
   ChatProvider(this._chatRepository);
 
-  void initSocket(UserEntity? user) {
+  void initSocket(
+    UserEntity? user, {
+    NotificationProvider? notificationProvider,
+  }) {
     _currentUser = user;
+    _notificationProvider = notificationProvider;
     if (user == null) return;
 
     // Configure socket url based on ApiService
@@ -67,6 +74,13 @@ class ChatProvider extends ChangeNotifier {
           // New message for another chat, perhaps show notification or update chat list
           fetchChats();
         }
+      }
+    });
+
+    _socket?.on('getNotification', (data) {
+      print('New Notification received: $data');
+      if (_notificationProvider != null && data != null) {
+        _notificationProvider!.addRealTimeNotification(data);
       }
     });
 

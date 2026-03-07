@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mero_bazar/features/auth/data/models/user_model.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
+import 'package:mero_bazar/features/auth/domain/entities/user_entity.dart';
 
 class FavoriteProvider extends ChangeNotifier {
   static const String _boxName = 'favorite_sellers';
@@ -23,7 +25,11 @@ class FavoriteProvider extends ChangeNotifier {
     return _favorites.any((seller) => seller.id == sellerId);
   }
 
-  Future<void> toggleFavorite(UserModel seller) async {
+  Future<void> toggleFavorite(
+    UserModel seller, {
+    NotificationProvider? notificationProvider,
+    UserEntity? currentUser,
+  }) async {
     final box = await Hive.openBox<UserModel>(_boxName);
     final index = _favorites.indexWhere((s) => s.id == seller.id);
 
@@ -35,6 +41,11 @@ class FavoriteProvider extends ChangeNotifier {
       // Add to favorites
       _favorites.add(seller);
       await box.add(seller);
+
+      // Trigger notification
+      if (notificationProvider != null && currentUser != null) {
+        notificationProvider.sendFavoriteNotification(seller.id!, currentUser);
+      }
     }
     notifyListeners();
   }

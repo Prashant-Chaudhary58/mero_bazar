@@ -32,6 +32,11 @@ import 'package:mero_bazar/features/chat/presentation/pages/chat_list_screen.dar
 import 'package:mero_bazar/features/chat/presentation/pages/chat_screen.dart';
 import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
+import 'package:mero_bazar/features/notifications/presentation/pages/notifications_screen.dart';
+
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 class MyApp extends StatelessWidget {
   final UserModel? initialUser;
@@ -47,6 +52,7 @@ class MyApp extends StatelessWidget {
           create: (_) => UserProvider(initialUser: initialUser),
         ),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
 
         // External
         Provider<Dio>.value(value: ApiService.dio),
@@ -129,20 +135,28 @@ class MyApp extends StatelessWidget {
           update: (_, productRepo, adminRepo, previous) =>
               AdminProvider(productRepo, adminRepo),
         ),
-        ChangeNotifierProxyProvider2<
+        ChangeNotifierProxyProvider3<
           ChatRepositoryImpl,
           UserProvider,
+          NotificationProvider,
           ChatProvider
         >(
           create: (context) {
             final provider = ChatProvider(context.read<ChatRepositoryImpl>());
-            provider.initSocket(context.read<UserProvider>().user);
+            provider.initSocket(
+              context.read<UserProvider>().user,
+              notificationProvider: context.read<NotificationProvider>(),
+            );
             return provider;
           },
-          update: (_, repo, userProvider, previous) {
+          update: (_, repo, userProvider, notificationProvider, previous) {
             previous ??= ChatProvider(repo);
-            if (previous.user != userProvider.user)
-              previous.initSocket(userProvider.user);
+            if (previous.user != userProvider.user) {
+              previous.initSocket(
+                userProvider.user,
+                notificationProvider: notificationProvider,
+              );
+            }
             return previous;
           },
         ),
@@ -150,6 +164,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: "Mero Baazar",
+        scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         theme: getApplicationTheme(),
         initialRoute: initialUser != null ? '/bottomnav' : '/',
@@ -164,6 +179,7 @@ class MyApp extends StatelessWidget {
           '/admin-dashboard': (context) => const AdminDashboardScreen(),
           '/chat-list': (context) => const ChatListScreen(),
           '/chat-details': (context) => const ChatScreen(),
+          '/notifications': (context) => const NotificationsScreen(),
         },
       ),
     );

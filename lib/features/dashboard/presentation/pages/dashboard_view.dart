@@ -18,7 +18,7 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView> {
   DateTime? _lastPressedAt;
 
-  final List<Widget> _screens = const [
+  final List<Widget> _screens = [
     HomeScreen(),
     ChatListScreen(),
     FavouriteScreen(),

@@ -4,6 +4,7 @@ import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 
 class HomeSearchWidget extends StatelessWidget {
   final ValueChanged<String>? onChanged;
@@ -45,7 +46,20 @@ class HomeSearchWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const Icon(Icons.notifications, color: Colors.green, size: 28),
+        Consumer<NotificationProvider>(
+          builder: (context, provider, _) => GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/notifications'),
+            child: Badge.count(
+              count: provider.unreadCount,
+              isLabelVisible: provider.unreadCount > 0,
+              child: const Icon(
+                Icons.notifications,
+                color: Colors.green,
+                size: 28,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

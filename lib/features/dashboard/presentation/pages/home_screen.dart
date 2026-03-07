@@ -8,7 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
 import 'package:mero_bazar/features/auth/data/models/user_model.dart';
+import 'package:mero_bazar/core/providers/user_provider.dart';
 
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../widgets/home_search_widget.dart';
@@ -272,6 +274,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         image: product.sellerImage,
                                         role: 'seller',
                                       ),
+                                      notificationProvider: context
+                                          .read<NotificationProvider>(),
+                                      currentUser: context
+                                          .read<UserProvider>()
+                                          .user,
                                     );
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
