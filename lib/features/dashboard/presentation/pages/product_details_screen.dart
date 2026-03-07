@@ -189,6 +189,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               'chatId': chat.id,
               'receiverName': otherUser?['fullName'] ?? 'Farmer',
               'receiverImage': otherUser?['image'],
+              'receiverPhone': otherUser?['phone'],
+              'receiverId': otherUser?['_id'],
             },
           );
         } else {

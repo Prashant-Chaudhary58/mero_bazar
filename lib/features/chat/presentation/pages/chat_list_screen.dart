@@ -101,10 +101,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       'receiverName': name,
                       'receiverImage': image,
                       'receiverPhone': otherUser?['phone'],
+                      'receiverId': otherUser?['_id'],
                     },
-                  ).then((_) {
-                    context.read<ChatProvider>().fetchChats();
-                  });
+                  );
                 },
               );
             },

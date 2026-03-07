@@ -149,25 +149,24 @@ class ChatProvider extends ChangeNotifier {
       _currentMessages.add(message);
       notifyListeners();
 
+      // Find chat safely
+      final currentChat = _chats.firstWhere(
+        (c) => c.id == chatId,
+        orElse: () => _chats.isNotEmpty
+            ? _chats.first
+            : ChatEntity(id: chatId, updatedAt: DateTime.now()),
+      );
+
+      final participants = currentChat.otherParticipant != null
+          ? [currentChat.otherParticipant!['_id']]
+          : [];
+
       // Emit through socket
       final msgMap = {
         '_id': message.id,
         'chat': {
           '_id': message.chat,
-          'participants':
-              _chats
-                      .firstWhere(
-                        (c) => c.id == chatId,
-                        orElse: () => _chats[0],
-                      )
-                      .otherParticipant !=
-                  null
-              ? [
-                  _chats
-                      .firstWhere((c) => c.id == chatId)
-                      .otherParticipant!['_id'],
-                ]
-              : [],
+          'participants': participants,
         }, // minimal payload matching expected backend emit
         'sender': message.sender,
         'text': message.text,
