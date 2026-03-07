@@ -133,6 +133,55 @@ class NotificationProvider extends ChangeNotifier {
     });
   }
 
+  void showChatSnackBar({required String senderName, required String message}) {
+    if (scaffoldMessengerKey.currentState == null) return;
+
+    scaffoldMessengerKey.currentState!.hideCurrentMaterialBanner();
+    scaffoldMessengerKey.currentState!.showMaterialBanner(
+      MaterialBanner(
+        elevation: 10,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.chat, color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "NEW MESSAGE",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            Text(
+              "$senderName: $message",
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green.shade600,
+        actions: [
+          TextButton(
+            onPressed: () =>
+                scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner(),
+            child: const Text("OK", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    // Auto-hide after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
+    });
+  }
+
   Future<void> sendFavoriteNotification(
     String sellerId,
     UserEntity? currentUser,

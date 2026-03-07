@@ -22,6 +22,14 @@ class ChatProvider extends ChangeNotifier {
 
   NotificationProvider? _notificationProvider;
 
+  int _unreadMessagesCount = 0;
+  int get unreadMessagesCount => _unreadMessagesCount;
+
+  void clearUnreadCount() {
+    _unreadMessagesCount = 0;
+    notifyListeners();
+  }
+
   List<ChatEntity> get chats => _chats;
   List<MessageEntity> get currentMessages => _currentMessages;
   bool get isLoading => _isLoading;
@@ -71,7 +79,18 @@ class ChatProvider extends ChangeNotifier {
           _currentMessages.add(messageEntity);
           notifyListeners();
         } else {
-          // New message for another chat, perhaps show notification or update chat list
+          // New message for another chat
+          _unreadMessagesCount++;
+          notifyListeners();
+
+          if (_notificationProvider != null) {
+            _notificationProvider!.showChatSnackBar(
+              senderName: messageEntity.sender != null
+                  ? messageEntity.sender!['fullName'] ?? 'User'
+                  : 'User',
+              message: messageEntity.text,
+            );
+          }
           fetchChats();
         }
       }

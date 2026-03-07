@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/profile_screen.dart';
 import 'package:mero_bazar/features/chat/presentation/pages/chat_list_screen.dart';
+import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.dart';
 import 'favourite_screen.dart';
 import 'home_screen.dart';
 
@@ -93,10 +94,26 @@ class _DashboardViewState extends State<DashboardView> {
           selectedItemColor: Colors.green,
           onTap: (index) {
             context.read<DashboardProvider>().setSelectedIndex(index);
+            if (index == 1) {
+              // Clear chat badge on tab switch
+              context.read<ChatProvider>().clearUnreadCount();
+            }
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Consumer<ChatProvider>(
+                builder: (context, chatProvider, _) => Badge.count(
+                  count: chatProvider.unreadMessagesCount,
+                  isLabelVisible: chatProvider.unreadMessagesCount > 0,
+                  child: const Icon(Icons.chat),
+                ),
+              ),
+              label: "Chat",
+            ),
             BottomNavigationBarItem(
               icon: Icon(Icons.favorite),
               label: "Favourite",
