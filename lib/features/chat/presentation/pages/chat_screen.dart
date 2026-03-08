@@ -40,7 +40,9 @@ class _ChatScreenState extends State<ChatScreen> {
           context.read<ChatProvider>().fetchMessages(_chatId);
         });
       } else {
-        Navigator.pop(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pop(context);
+        });
       }
       _isInit = true;
     }
@@ -54,6 +56,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollToBottom() {
+    if (!mounted) return;
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
@@ -111,13 +114,28 @@ class _ChatScreenState extends State<ChatScreen> {
                 return;
               }
 
-              final Uri launchUri = Uri(scheme: 'tel', path: _receiverPhone);
-              if (await canLaunchUrl(launchUri)) {
-                await launchUrl(launchUri);
-              } else {
+              try {
+                final cleanPhone = _receiverPhone!.replaceAll(
+                  RegExp(r'[^\d+]'),
+                  '',
+                );
+                final Uri launchUri = Uri(scheme: 'tel', path: cleanPhone);
+                if (await canLaunchUrl(launchUri)) {
+                  await launchUrl(launchUri);
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Could not launch dialer")),
+                    );
+                  }
+                }
+              } catch (e) {
+                print("Error launching dialer: $e");
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Could not launch dialer")),
+                    const SnackBar(
+                      content: Text("Invalid phone number format"),
+                    ),
                   );
                 }
               }
@@ -135,7 +153,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
 
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToBottom();
+                  if (mounted) _scrollToBottom();
                 });
 
                 return ListView.builder(

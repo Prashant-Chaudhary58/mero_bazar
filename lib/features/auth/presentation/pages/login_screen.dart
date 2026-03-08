@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../view_model/login_view_model.dart';
+import 'package:mero_bazar/core/services/biometric_service.dart';
+import 'package:mero_bazar/core/providers/user_provider.dart';
+import 'package:mero_bazar/core/services/auth_service.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -12,7 +14,6 @@ class LoginScreen extends StatelessWidget {
         ModalRoute.of(context)?.settings.arguments as String? ?? 'buyer';
 
     final vm = context.watch<LoginViewModel>();
-
 
     final phoneController = TextEditingController();
     final passwordController = TextEditingController();
@@ -136,6 +137,51 @@ class LoginScreen extends StatelessWidget {
                           "Login",
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Center(
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.fingerprint,
+                    size: 40,
+                    color: Colors.green,
+                  ),
+                  onPressed: () async {
+                    final canAuth = await BiometricService.canCheckBiometrics();
+                    if (!canAuth) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Biometrics not available"),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    final authenticated = await BiometricService.authenticate();
+                    if (authenticated && context.mounted) {
+                      // Login if session exists
+                      final user = await AuthService.tryAutoLogin();
+                      if (user != null) {
+                        context.read<UserProvider>().setUser(user);
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/bottomnav',
+                          (route) => false,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please login with password first"),
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
               ),
 

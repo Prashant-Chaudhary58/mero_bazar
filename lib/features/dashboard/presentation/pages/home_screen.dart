@@ -1,9 +1,17 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
 import 'package:mero_bazar/core/services/location_service.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
+import 'package:mero_bazar/features/auth/data/models/user_model.dart';
+import 'package:mero_bazar/core/providers/user_provider.dart';
 
+import 'package:mero_bazar/l10n/app_localizations.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 import '../widgets/category_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../widgets/home_search_widget.dart';
@@ -22,18 +30,58 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = "All";
   String _searchQuery = "";
 
-  final List<Map<String, String>> _categories = [
-    {"name": "All", "value": "All"},
-    {"name": "Vegetables (तरकारी)", "value": "Vegetables"},
-    {"name": "Fruits (फलफूल)", "value": "Fruits"},
-    {"name": "Grains (अन्न)", "value": "Grains"},
-    {"name": "Others (अन्य)", "value": "Others"},
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+  DateTime? _lastShake;
+
+  List<Map<String, String>> _getCategories(AppLocalizations l10n) => [
+    {"name": l10n.all, "value": "All"},
+    {"name": l10n.vegetables, "value": "Vegetables"},
+    {"name": l10n.fruits, "value": "Fruits"},
+    {"name": l10n.grains, "value": "Grains"},
+    {"name": l10n.others, "value": "Others"},
   ];
 
   @override
   void initState() {
     super.initState();
     _fetchProductsWithLocation();
+
+    // Listen to accelerometer events for Shake-to-Refresh
+    _accelerometerSubscription = accelerometerEvents.listen((
+      AccelerometerEvent event,
+    ) {
+      double gX = event.x / 9.80665;
+      double gY = event.y / 9.80665;
+      double gZ = event.z / 9.80665;
+
+      // Calculate total G-force
+      double gForce = sqrt(gX * gX + gY * gY + gZ * gZ);
+
+      // Threshold around 2.5G usually works well for intentional shakes
+      if (gForce > 2.5) {
+        final now = DateTime.now();
+        if (_lastShake == null ||
+            now.difference(_lastShake!) > const Duration(seconds: 2)) {
+          _lastShake = now;
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Shake detected! Refreshing marketplace..."),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+          _fetchProductsWithLocation();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _accelerometerSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchProductsWithLocation() async {
@@ -44,15 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final position = await LocationService.getCurrentPosition();
       lat = position.latitude;
-      lat = position.latitude;
       lng = position.longitude;
 
-      if (mounted) {
-        setState(() {
-          _userLat = lat;
-          _userLng = lng;
-        });
-      }
       if (mounted) {
         setState(() {
           _userLat = lat;
@@ -70,6 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final categories = _getCategories(l10n);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE),
       body: SafeArea(
@@ -90,15 +134,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 const HomeBannerWidget(),
                 const SizedBox(height: 24),
-                const Text(
-                  "Categories",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.categories,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: _categories.map((cat) {
+                    children: categories.map((cat) {
                       return CategoryWidget(
                         title: cat["name"]!,
                         isSelected: _selectedCategory == cat["value"],
@@ -198,18 +245,53 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             );
                           },
-                          child: ProductCardWidget(
-                            name: product.name,
-                            image: product.image ?? '',
-                            rating: 0.0,
-                            price: product.price.toInt(),
-                            distance:
-                                (_userLat != null &&
-                                    _userLng != null &&
-                                    product.sellerLat != null &&
-                                    product.sellerLng != null)
-                                ? "${(Geolocator.distanceBetween(_userLat!, _userLng!, product.sellerLat!, product.sellerLng!) / 1000).toStringAsFixed(1)} km"
-                                : null,
+                          child: Consumer<FavoriteProvider>(
+                            builder: (context, favProvider, _) {
+                              return ProductCardWidget(
+                                name: product.name,
+                                image: product.image ?? '',
+                                rating: product.averageRating.toDouble(),
+                                price: product.price.toInt(),
+                                isFavorite: favProvider.isFavorite(
+                                  product.seller,
+                                ),
+                                distance:
+                                    (_userLat != null &&
+                                        _userLng != null &&
+                                        product.sellerLat != null &&
+                                        product.sellerLng != null)
+                                    ? "${(Geolocator.distanceBetween(_userLat!, _userLng!, product.sellerLat!, product.sellerLng!) / 1000).toStringAsFixed(1)} km"
+                                    : null,
+                                onFavoriteTap: () {
+                                  if (product.seller != null) {
+                                    favProvider.toggleFavorite(
+                                      UserModel(
+                                        id: product.seller,
+                                        fullName:
+                                            product.sellerName ??
+                                            "Unknown Seller",
+                                        phone: product.sellerPhone ?? "",
+                                        image: product.sellerImage,
+                                        role: 'seller',
+                                      ),
+                                      notificationProvider: context
+                                          .read<NotificationProvider>(),
+                                      currentUser: context
+                                          .read<UserProvider>()
+                                          .user,
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Seller information not available",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
                           ),
                         );
                       },

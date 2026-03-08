@@ -51,6 +51,7 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final token = await SecureStorage.getToken();
+          print("Dio Request: ${options.method} ${options.uri}");
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -63,6 +64,8 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {
+          print("Dio Error: ${error.type} - ${error.message}");
+          print("Dio Error URL: ${error.requestOptions.uri}");
           if (error.response?.statusCode == 401) {
             // Future: trigger logout globally
             print("Session expired - should logout");

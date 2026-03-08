@@ -1,0 +1,33 @@
+{
+  "appTitle": "Mero Bazar",
+  "myAccount": "My Account",
+  "helloUser": "Hello, {name}",
+  "@helloUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewEditProfile": "view & edit your profile",
+  "myListing": "My Listing",
+  "switchToAdmin": "Switch to Admin",
+  "language": "Language",
+  "logout": "Logout",
+  "logoutConfirmTitle": "Logout",
+  "logoutConfirmMessage": "Are you sure you want to logout?",
+  "cancel": "Cancel",
+  "ok": "OK",
+  "search": "Search",
+  "categories": "Categories",
+  "all": "All",
+  "vegetables": "Vegetables",
+  "fruits": "Fruits",
+  "grains": "Grains",
+  "others": "Others",
+  "notifications": "Notifications",
+  "noNotifications": "No notifications yet",
+  "newReview": "New Review",
+  "newFavorite": "New Favorite",
+  "newMessage": "New Message"
+}

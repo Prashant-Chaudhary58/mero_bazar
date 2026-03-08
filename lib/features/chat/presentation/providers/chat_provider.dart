@@ -4,6 +4,7 @@ import '../../domain/repositories/chat_repository.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:mero_bazar/features/auth/domain/entities/user_entity.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ChatRepository _chatRepository;
@@ -19,6 +20,16 @@ class ChatProvider extends ChangeNotifier {
   UserEntity? _currentUser;
   UserEntity? get user => _currentUser;
 
+  NotificationProvider? _notificationProvider;
+
+  int _unreadMessagesCount = 0;
+  int get unreadMessagesCount => _unreadMessagesCount;
+
+  void clearUnreadCount() {
+    _unreadMessagesCount = 0;
+    notifyListeners();
+  }
+
   List<ChatEntity> get chats => _chats;
   List<MessageEntity> get currentMessages => _currentMessages;
   bool get isLoading => _isLoading;
@@ -26,8 +37,12 @@ class ChatProvider extends ChangeNotifier {
 
   ChatProvider(this._chatRepository);
 
-  void initSocket(UserEntity? user) {
+  void initSocket(
+    UserEntity? user, {
+    NotificationProvider? notificationProvider,
+  }) {
     _currentUser = user;
+    _notificationProvider = notificationProvider;
     if (user == null) return;
 
     // Configure socket url based on ApiService
@@ -64,9 +79,27 @@ class ChatProvider extends ChangeNotifier {
           _currentMessages.add(messageEntity);
           notifyListeners();
         } else {
-          // New message for another chat, perhaps show notification or update chat list
+          // New message for another chat
+          _unreadMessagesCount++;
+          notifyListeners();
+
+          if (_notificationProvider != null) {
+            _notificationProvider!.showChatSnackBar(
+              senderName: messageEntity.sender != null
+                  ? messageEntity.sender!['fullName'] ?? 'User'
+                  : 'User',
+              message: messageEntity.text,
+            );
+          }
           fetchChats();
         }
+      }
+    });
+
+    _socket?.on('getNotification', (data) {
+      print('New Notification received: $data');
+      if (_notificationProvider != null && data != null) {
+        _notificationProvider!.addRealTimeNotification(data);
       }
     });
 
@@ -149,25 +182,24 @@ class ChatProvider extends ChangeNotifier {
       _currentMessages.add(message);
       notifyListeners();
 
+      // Find chat safely
+      final currentChat = _chats.firstWhere(
+        (c) => c.id == chatId,
+        orElse: () => _chats.isNotEmpty
+            ? _chats.first
+            : ChatEntity(id: chatId, updatedAt: DateTime.now()),
+      );
+
+      final participants = currentChat.otherParticipant != null
+          ? [currentChat.otherParticipant!['_id']]
+          : [];
+
       // Emit through socket
       final msgMap = {
         '_id': message.id,
         'chat': {
           '_id': message.chat,
-          'participants':
-              _chats
-                      .firstWhere(
-                        (c) => c.id == chatId,
-                        orElse: () => _chats[0],
-                      )
-                      .otherParticipant !=
-                  null
-              ? [
-                  _chats
-                      .firstWhere((c) => c.id == chatId)
-                      .otherParticipant!['_id'],
-                ]
-              : [],
+          'participants': participants,
         }, // minimal payload matching expected backend emit
         'sender': message.sender,
         'text': message.text,

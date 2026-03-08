@@ -10,6 +10,8 @@ class ProductModel extends ProductEntity {
     required super.quantity,
     super.image,
     super.seller,
+    super.sellerName,
+    super.sellerImage,
     super.sellerLat,
     super.sellerLng,
     super.sellerPhone,
@@ -28,6 +30,8 @@ class ProductModel extends ProductEntity {
       quantity: json['quantity']?.toString() ?? '0',
       image: json['image'],
       seller: json['seller'] is Map ? json['seller']['_id'] : json['seller'],
+      sellerName: (json['seller'] is Map) ? json['seller']['fullName'] : null,
+      sellerImage: (json['seller'] is Map) ? json['seller']['image'] : null,
       sellerLat: (json['seller'] is Map && json['seller']['lat'] != null)
           ? double.tryParse(json['seller']['lat'].toString())
           : null,
@@ -35,7 +39,7 @@ class ProductModel extends ProductEntity {
           ? double.tryParse(json['seller']['lng'].toString())
           : null,
       sellerPhone: (json['seller'] is Map) ? json['seller']['phone'] : null,
-      averageRating: json['averageRating'] ?? 0.0,
+      averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
       numOfReviews: json['numOfReviews'] ?? 0,
       isVerified: json['isVerified'] ?? false,
     );
@@ -49,7 +53,44 @@ class ProductModel extends ProductEntity {
       'category': category,
       'quantity': quantity,
       'image': image,
-      // 'seller': seller, // Typically not sent on creation
     };
+  }
+
+  ProductModel copyWith({
+    String? id,
+    String? name,
+    String? description,
+    int? price,
+    String? category,
+    String? quantity,
+    String? image,
+    String? seller,
+    String? sellerName,
+    String? sellerImage,
+    double? sellerLat,
+    double? sellerLng,
+    String? sellerPhone,
+    double? averageRating,
+    int? numOfReviews,
+    bool? isVerified,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      category: category ?? this.category,
+      quantity: quantity ?? this.quantity,
+      image: image ?? this.image,
+      seller: seller ?? this.seller,
+      sellerName: sellerName ?? this.sellerName,
+      sellerImage: sellerImage ?? this.sellerImage,
+      sellerLat: sellerLat ?? this.sellerLat,
+      sellerLng: sellerLng ?? this.sellerLng,
+      sellerPhone: sellerPhone ?? this.sellerPhone,
+      averageRating: averageRating ?? this.averageRating,
+      numOfReviews: numOfReviews ?? this.numOfReviews,
+      isVerified: isVerified ?? this.isVerified,
+    );
   }
 }

@@ -3,11 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
 import 'package:mero_bazar/features/profile/presentation/pages/edit_profile_screen.dart';
-import 'package:mero_bazar/core/providers/user_provider.dart';
 import 'package:mero_bazar/features/auth/domain/entities/user_entity.dart';
 import 'package:mero_bazar/features/auth/data/repositories/auth_repository_impl.dart';
-
-class MockUserProvider extends Mock implements UserProvider {}
+import 'package:mero_bazar/features/dashboard/presentation/providers/product_provider.dart';
+import 'package:mero_bazar/features/notifications/presentation/providers/notification_provider.dart';
+import 'package:mero_bazar/features/dashboard/presentation/providers/favorite_provider.dart';
+import 'package:mero_bazar/features/chat/presentation/providers/chat_provider.dart';
+import 'package:mero_bazar/core/providers/user_provider.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
+import '../../../../test_helper.dart';
 
 class MockAuthRepositoryImpl extends Mock implements AuthRepositoryImpl {}
 
@@ -33,13 +37,40 @@ void main() {
     );
 
     when(() => mockUserProvider.user).thenReturn(user);
+
+    when(
+      () => mockAuthRepository.updateProfile(
+        user: any(named: 'user'),
+        imageFile: any(named: 'imageFile'),
+      ),
+    ).thenAnswer(
+      (_) async => const UserEntity(
+        id: '1',
+        phone: '9800000000',
+        fullName: 'John Smith',
+        role: 'buyer',
+      ),
+    );
   });
 
-  Widget createEditProfileScreen() {
+  Widget createEditProfileScreenWithRepo() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<UserProvider>.value(value: mockUserProvider),
         Provider<AuthRepositoryImpl>.value(value: mockAuthRepository),
+        ChangeNotifierProvider<ProductProvider>.value(
+          value: MockProductProvider(),
+        ),
+        ChangeNotifierProvider<NotificationProvider>.value(
+          value: MockNotificationProvider(),
+        ),
+        ChangeNotifierProvider<FavoriteProvider>.value(
+          value: MockFavoriteProvider(),
+        ),
+        ChangeNotifierProvider<ChatProvider>.value(value: MockChatProvider()),
+        ChangeNotifierProvider<DashboardProvider>.value(
+          value: MockDashboardProvider(),
+        ),
       ],
       child: const MaterialApp(home: EditProfileScreen()),
     );
@@ -47,48 +78,28 @@ void main() {
 
   group('EditProfileScreen Widget Tests', () {
     testWidgets('renders all fields with initial user data', (tester) async {
-      await tester.pumpWidget(createEditProfileScreen());
+      await tester.pumpWidget(createEditProfileScreenWithRepo());
+      await tester.pumpAndSettle();
 
       expect(find.text('My Account'), findsOneWidget);
-      expect(
-        find.widgetWithText(TextField, 'Prashant Chaudhary'),
-        findsOneWidget,
-      );
+      expect(find.text('Prashant Chaudhary'), findsOneWidget);
       expect(find.text('Save'), findsOneWidget);
     });
 
     testWidgets('calls updateProfile when Save is tapped', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1080, 1920));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(createEditProfileScreenWithRepo());
+      await tester.pumpAndSettle();
 
-      // Mock updateProfile to return the updated user
-      when(
-        () => mockAuthRepository.updateProfile(
-          user: any(named: 'user'),
-          imageFile: any(named: 'imageFile'),
-        ),
-      ).thenAnswer(
-        (_) async => const UserEntity(
-          id: '1',
-          phone: '9800000000',
-          fullName: 'John Smith',
-          role: 'buyer',
-        ),
-      );
-
-      await tester.pumpWidget(createEditProfileScreen());
-
-      // Change name
-      final nameField = find.widgetWithText(TextField, 'Prashant Chaudhary');
+      final nameField = find.byType(TextField).first;
       await tester.enterText(nameField, 'John Smith');
 
       final saveButton = find.text('Save');
       await tester.ensureVisible(saveButton);
       await tester.tap(saveButton);
-      await tester.pump(); // Show loading dialog
-      await tester.pump(); // Finish updateProfile
-      await tester.pump(); // Pop loading dialog
-      await tester.pump(); // Pop screen
+
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
 
       verify(
         () => mockAuthRepository.updateProfile(

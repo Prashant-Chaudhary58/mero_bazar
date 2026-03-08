@@ -20,4 +20,8 @@ class ReviewModel extends ReviewEntity {
       userId: json['user'] is Map ? json['user']['_id'] : json['user'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {'title': title, 'rating': rating, 'text': text};
+  }
 }

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import 'package:mero_bazar/core/services/api_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mero_bazar/core/providers/dashboard_provider.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({Key? key}) : super(key: key);
@@ -25,6 +26,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.green),
+          onPressed: () {
+            context.read<DashboardProvider>().setSelectedIndex(0);
+          },
+        ),
         title: const Text('Chats', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 1,
@@ -101,10 +108,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       'receiverName': name,
                       'receiverImage': image,
                       'receiverPhone': otherUser?['phone'],
+                      'receiverId': otherUser?['_id'],
                     },
-                  ).then((_) {
-                    context.read<ChatProvider>().fetchChats();
-                  });
+                  );
                 },
               );
             },
