@@ -8,6 +8,10 @@ import 'favourite_screen.dart';
 import 'home_screen.dart';
 
 import 'package:flutter/services.dart';
+import 'dart:async';
+import 'package:mero_bazar/core/services/sensor_service.dart';
+import 'package:mero_bazar/core/services/auth_service.dart';
+import 'package:mero_bazar/core/providers/user_provider.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -18,6 +22,57 @@ class DashboardView extends StatefulWidget {
 
 class _DashboardViewState extends State<DashboardView> {
   DateTime? _lastPressedAt;
+  StreamSubscription? _shakeSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _initShakeLogout();
+  }
+
+  void _initShakeLogout() {
+    SensorService.listenToShake(() {
+      if (mounted) {
+        _onShakeDetected();
+      }
+    });
+  }
+
+  void _onShakeDetected() async {
+    // Only trigger if user is logged in
+    final userProvider = context.read<UserProvider>();
+    if (userProvider.user == null) return;
+
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Shake Detected!'),
+        content: const Text('Do you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      await AuthService.clearSession();
+      context.read<UserProvider>().clearUser();
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _shakeSubscription?.cancel();
+    super.dispose();
+  }
 
   final List<Widget> _screens = [
     HomeScreen(),
