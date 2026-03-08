@@ -128,9 +128,11 @@ class NotificationProvider extends ChangeNotifier {
     );
 
     // Auto-hide after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
-    });
+    if (scaffoldMessengerKey.currentState != null) {
+      Future.delayed(const Duration(seconds: 3), () {
+        scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
+      });
+    }
   }
 
   void showChatSnackBar({required String senderName, required String message}) {
@@ -177,9 +179,11 @@ class NotificationProvider extends ChangeNotifier {
     );
 
     // Auto-hide after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
-    });
+    if (scaffoldMessengerKey.currentState != null) {
+      Future.delayed(const Duration(seconds: 3), () {
+        scaffoldMessengerKey.currentState?.hideCurrentMaterialBanner();
+      });
+    }
   }
 
   Future<void> sendFavoriteNotification(

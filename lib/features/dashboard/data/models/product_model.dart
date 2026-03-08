@@ -53,7 +53,44 @@ class ProductModel extends ProductEntity {
       'category': category,
       'quantity': quantity,
       'image': image,
-      // 'seller': seller, // Typically not sent on creation
     };
+  }
+
+  ProductModel copyWith({
+    String? id,
+    String? name,
+    String? description,
+    int? price,
+    String? category,
+    String? quantity,
+    String? image,
+    String? seller,
+    String? sellerName,
+    String? sellerImage,
+    double? sellerLat,
+    double? sellerLng,
+    String? sellerPhone,
+    double? averageRating,
+    int? numOfReviews,
+    bool? isVerified,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      category: category ?? this.category,
+      quantity: quantity ?? this.quantity,
+      image: image ?? this.image,
+      seller: seller ?? this.seller,
+      sellerName: sellerName ?? this.sellerName,
+      sellerImage: sellerImage ?? this.sellerImage,
+      sellerLat: sellerLat ?? this.sellerLat,
+      sellerLng: sellerLng ?? this.sellerLng,
+      sellerPhone: sellerPhone ?? this.sellerPhone,
+      averageRating: averageRating ?? this.averageRating,
+      numOfReviews: numOfReviews ?? this.numOfReviews,
+      isVerified: isVerified ?? this.isVerified,
+    );
   }
 }
